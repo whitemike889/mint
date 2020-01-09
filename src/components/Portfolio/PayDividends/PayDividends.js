@@ -3,18 +3,20 @@
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { WalletContext } from "../../../utils/context";
+import retry from "../../../utils/retry";
 import {
   sendDividends,
   getBalancesForToken,
   DUST,
   getEligibleAddresses
 } from "../../../utils/sendDividends";
-import { Card, Icon, Form, Button, Alert, Spin, notification, Badge, Tooltip, message } from "antd";
+import { Card, Icon, Form, Button, Spin, notification, Badge, Tooltip, message } from "antd";
 import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
-import isPiticoTokenHolder from "../../../utils/isPiticoTokenHolder";
 import debounce from "../../../utils/debounce";
 import { FormItemWithMaxAddon } from "../EnhancedInputs";
+import { AdvancedOptions } from "./AdvancedOptions";
+import { QRCode } from "../../Common/QRCode";
 
 const StyledPayDividends = styled.div`
   * {
@@ -32,6 +34,13 @@ const StyledStat = styled.div`
   }
 `;
 
+export const StyledButtonWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
 const PayDividends = ({ SLP, token, onClose }) => {
   const ContextValue = React.useContext(WalletContext);
   const { wallet, tokens, balances, slpBalancesAndUtxos } = ContextValue;
@@ -40,19 +49,20 @@ const PayDividends = ({ SLP, token, onClose }) => {
     value: "",
     tokenId: token.tokenId
   });
+  const [advancedOptions, setAdvancedOptions] = useState({
+    ignoreOwnAddress: true,
+    addressesToExclude: [{ address: "", valid: null }]
+  });
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ tokens: 0, holders: 0, eligibles: 0, txFee: 0 });
 
   const totalBalance = balances.totalBalance;
 
-  const submitEnabled =
-    formData.tokenId &&
-    formData.value &&
-    Number(formData.value) > DUST &&
-    (totalBalance - Number(formData.value) - Number(stats.txFee)).toFixed(8) >= 0;
+  const submitEnabled = formData.tokenId && formData.value && Number(formData.value) > DUST;
+
   useEffect(() => {
     setLoading(true);
-    getBalancesForToken(token.tokenId)
+    retry(() => getBalancesForToken(token.tokenId))
       .then(balancesForToken => {
         setStats({
           ...stats,
@@ -65,15 +75,23 @@ const PayDividends = ({ SLP, token, onClose }) => {
       .finally(() => setLoading(false));
   }, []);
 
-  const calcEligibles = useCallback(
-    debounce(value => {
-      if (stats.balances && value && !Number.isNaN(value)) {
+  const calcEligiblesAndFee = useCallback(
+    debounce(async (value, advancedOptions) => {
+      if (stats.balances && !Number.isNaN(value) && value > 0) {
         setLoading(true);
-        getEligibleAddresses(wallet, stats.balances, value)
-          .then(({ addresses, txFee }) => {
-            setStats({ ...stats, eligibles: addresses.length, txFee });
-          })
-          .finally(() => setLoading(false));
+        try {
+          const { addresses, txFee } = await getEligibleAddresses(
+            wallet,
+            stats.balances,
+            value,
+            slpBalancesAndUtxos.nonSlpUtxos,
+            advancedOptions
+          );
+          setStats({ ...stats, eligibles: addresses.length, txFee });
+        } catch (error) {
+          message.error("Unable to calculate eligible addresses due to network errors");
+        }
+        setLoading(false);
       } else {
         setStats({ ...stats, eligibles: 0, txFee: 0 });
       }
@@ -94,7 +112,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
     setLoading(true);
     const { value } = formData;
     try {
-      const link = await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, {
+      const link = await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, advancedOptions, {
         value,
         tokenId: token.tokenId
       });
@@ -155,7 +173,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
     setFormData(p => ({ ...p, [name]: value }));
 
     if (name === "value") {
-      calcEligibles(value);
+      calcEligiblesAndFee(value, advancedOptions);
     }
   };
 
@@ -163,18 +181,29 @@ const PayDividends = ({ SLP, token, onClose }) => {
     setLoading(true);
 
     try {
-      const { txFee } = await getEligibleAddresses(wallet, stats.balances, totalBalance);
+      const { txFee } = await getEligibleAddresses(
+        wallet,
+        stats.balances,
+        totalBalance,
+        slpBalancesAndUtxos.nonSlpUtxos,
+        advancedOptions
+      );
       let value = totalBalance - txFee >= 0 ? (totalBalance - txFee).toFixed(8) : 0;
       setFormData({
         ...formData,
         value
       });
-      await calcEligibles(value);
+      await calcEligiblesAndFee(value, advancedOptions);
     } catch (err) {
       message.error("Unable to calculate the max value due to network errors");
     }
 
     setLoading(false);
+  };
+
+  const setAdvancedOptionsAndCalcEligibles = options => {
+    setAdvancedOptions(options);
+    calcEligiblesAndFee(formData.value, options);
   };
 
   return (
@@ -190,31 +219,25 @@ const PayDividends = ({ SLP, token, onClose }) => {
               }
               bordered={false}
             >
-              {!isPiticoTokenHolder(tokens) ? (
-                <Alert
-                  message={
-                    <span>
-                      <Paragraph>
-                        <Icon type="warning" /> EXPERIMENTAL
-                      </Paragraph>
-                      <Paragraph>
-                        This is an experimental feature, available only to Pitico Cash token
-                        holders.
-                      </Paragraph>
-                      <Paragraph>
-                        <a href="https://t.me/piticocash" target="_blank" rel="noopener noreferrer">
-                          Join our Telegram Group to get your $PTCH.
-                        </a>
-                      </Paragraph>
-                    </span>
-                  }
-                  type="warning"
-                  closable={false}
-                />
-              ) : null}
-              <br />
-              {isPiticoTokenHolder(tokens) ? (
+              {!balances.totalBalance ? (
+                <Row justify="center" type="flex">
+                  <Col>
+                    <br />
+                    <StyledButtonWrapper>
+                      <>
+                        <Paragraph>
+                          You currently have 0 BCH. Deposit some funds to use this feature.
+                        </Paragraph>
+                        <Paragraph>
+                          <QRCode id="borderedQRCode" address={wallet.Path145.cashAddress} />
+                        </Paragraph>
+                      </>
+                    </StyledButtonWrapper>
+                  </Col>
+                </Row>
+              ) : (
                 <>
+                  <br />
                   <Row type="flex">
                     <Col>
                       <Tooltip title="Circulating Supply">
@@ -271,7 +294,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
                           }
                           help={
                             !formData.dirty && Number(formData.value) < DUST
-                              ? "Must be greater than 0"
+                              ? `Must be greater than ${DUST} BCH`
                               : ""
                           }
                           onMax={onMaxDividend}
@@ -286,45 +309,22 @@ const PayDividends = ({ SLP, token, onClose }) => {
                         />
                       </Form>
                     </Col>
-                    <Col>
-                      <Tooltip title="Bitcoincash balance">
-                        <StyledStat>
-                          <Icon type="dollar" />
-                          &nbsp;
-                          <Badge
-                            count={totalBalance.toFixed(8) || "0"}
-                            overflowCount={Number.MAX_VALUE}
-                            showZero
-                          />
-                          <Paragraph>Balance</Paragraph>
-                        </StyledStat>
-                      </Tooltip>
-                    </Col>
-                    &nbsp; &nbsp; &nbsp;
-                    <Col>
-                      <Tooltip title="Transaction fee">
-                        <StyledStat>
-                          <Icon type="minus-circle" />
-                          &nbsp;
-                          <Badge
-                            count={stats.txFee || "0"}
-                            overflowCount={Number.MAX_VALUE}
-                            showZero
-                          />
-                          <Paragraph>Fee</Paragraph>
-                        </StyledStat>
-                      </Tooltip>
-                    </Col>
-                    <br />
-                    <br />
                     <Col span={24}>
-                      <Button disabled={!submitEnabled} onClick={() => submit()}>
-                        Pay Dividends
-                      </Button>
+                      <AdvancedOptions
+                        advancedOptions={advancedOptions}
+                        setAdvancedOptions={setAdvancedOptionsAndCalcEligibles}
+                      />
+                    </Col>
+                    <Col span={24}>
+                      <div style={{ paddingTop: "12px" }}>
+                        <Button disabled={!submitEnabled} onClick={() => submit()}>
+                          Pay Dividends
+                        </Button>
+                      </div>
                     </Col>
                   </Row>
                 </>
-              ) : null}
+              )}
             </Card>
           </Spin>
         </Col>

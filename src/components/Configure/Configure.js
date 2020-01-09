@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Row, Col, Card, Icon, Alert, Typography, Form, Input, Button, Collapse } from "antd";
 import StyledConfigure from "../Common/StyledPage";
 import { WalletContext } from "../../utils/context";
+import { StyledCollapse } from "../Common/StyledCollapse";
 const { Paragraph } = Typography;
 const { Panel } = Collapse;
 
@@ -85,11 +86,11 @@ export default () => {
               </div>
             </Form>
 
-            <Collapse>
+            <StyledCollapse>
               <Panel header="Seed Phrase (Mnemonic)" key="1">
                 <p>{wallet && wallet.mnemonic ? wallet.mnemonic : ""}</p>
               </Panel>
-            </Collapse>
+            </StyledCollapse>
           </Card>
         </Col>
       </Row>

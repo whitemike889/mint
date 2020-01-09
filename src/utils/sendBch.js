@@ -61,7 +61,7 @@ export const sendBch = withSLP(async (SLP, wallet, utxos, { addresses, values })
     for (let i = 0; i < addresses.length; i++) {
       const address = addresses[i];
       transactionBuilder.addOutput(
-        address,
+        SLP.Address.toCashAddress(address),
         SLP.BitcoinCash.toSatoshi(Number(values[i]).toFixed(8))
       );
     }
@@ -102,22 +102,6 @@ export const sendBch = withSLP(async (SLP, wallet, utxos, { addresses, values })
     console.log(`error: `, err);
     throw err;
   }
-});
-
-export const getBCHUtxos = withSLP(async (SLP, cashAddress) => {
-  const u = await SLP.Address.utxo(cashAddress);
-  const isTokenUtxoArray = await SLP.Utils.isTokenUtxo(u.utxos);
-  return u.utxos.filter((utxo, index) => !isTokenUtxoArray[index]);
-});
-
-// Get the balance in BCH of a BCH address.
-export const getBalanceFromUtxos = withSLP((SLP, utxos) => {
-  let satoshis = new Big(0);
-  for (let i = 0; i < utxos.length; i++) {
-    const utxo = utxos[i];
-    satoshis = satoshis.plus(utxo.satoshis);
-  }
-  return SLP.BitcoinCash.toBitcoinCash(Math.floor(satoshis));
 });
 
 export const calcFee = withSLP((SLP, utxos) => {

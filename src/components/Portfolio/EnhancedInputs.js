@@ -3,6 +3,7 @@ import { Form, Input, Icon } from "antd";
 import styled from "styled-components";
 import bchLogo from "../../assets/bch-logo-2.png";
 import { ScanQRCode } from "./ScanQRCode";
+import withSLP from "../../utils/withSLP";
 
 export const InputAddonText = styled.span`
   width: 100%;
@@ -33,3 +34,16 @@ export const FormItemWithQRCodeAddon = ({ onScan, inputProps, ...otherProps }) =
     </Form.Item>
   );
 };
+
+export const AddressValidators = withSLP(SLP => ({
+  safelyDetectAddressFormat: value => {
+    try {
+      return SLP.Address.detectAddressFormat(value);
+    } catch (error) {
+      return null;
+    }
+  },
+  isSLPAddress: value => AddressValidators.safelyDetectAddressFormat(value) === "slpaddr",
+  isBCHAddress: value => AddressValidators.safelyDetectAddressFormat(value) === "cashaddr",
+  isLegacyAddress: value => AddressValidators.safelyDetectAddressFormat(value) === "legacy"
+}))();
