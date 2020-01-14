@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { WalletContext } from "../../../utils/context";
@@ -7,13 +9,14 @@ import {
   getElegibleAddresses,
   DUST
 } from "../../../utils/sendDividends";
-import { Card, Icon, Form, Input, Button, Alert, Spin, notification, Badge, Tooltip } from "antd";
+import { Card, Icon, Form, Button, Alert, Spin, notification, Badge, Tooltip, message } from "antd";
 import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
 import isPiticoTokenHolder from "../../../utils/isPiticoTokenHolder";
 import debounce from "../../../utils/debounce";
-import { getBCHBalanceFromUTXO } from "../../../utils/sendBch";
-import bchLogo from "../../../assets/bch-logo.png";
+import { getBalanceFromUtxos, getBCHUtxos } from "../../../utils/sendBch";
+import { FormItemWithMaxAddon } from "../EnhancedInputs";
+import { retry } from "../../../utils/retry";
 
 const StyledPayDividends = styled.div`
   * {
@@ -91,7 +94,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
     }
 
     setLoading(true);
-    const { value, tokenId } = formData;
+    const { value } = formData;
     try {
       const link = await sendDividends(wallet, {
         value,
@@ -113,7 +116,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
       notification.success({
         message: "Success",
         description: (
-          <a href={link} target="_blank">
+          <a href={link} target="_blank" rel="noopener noreferrer">
             <Paragraph>Transaction successful. Click or tap here for more details</Paragraph>
           </a>
         ),
@@ -136,7 +139,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
       } else if (/Insufficient funds/.test(e.message)) {
         message = "Insufficient funds.";
       } else {
-        message = e.error || e.message;
+        message = e.message;
       }
 
       notification.error({
@@ -162,16 +165,20 @@ const PayDividends = ({ SLP, token, onClose }) => {
     setLoading(true);
 
     try {
-      const bal = await getBCHBalanceFromUTXO(wallet);
-      const { txFee } = await getElegibleAddresses(wallet, stats.balances, bal);
-      let value = bal - txFee - DUST >= 0 ? (bal - txFee - DUST).toFixed(8) : 0;
+      const utxos = await retry(() => getBCHUtxos(wallet.cashAddress));
+      const totalBalance = getBalanceFromUtxos(utxos);
+      const { txFee } = await getElegibleAddresses(wallet, stats.balances, totalBalance);
+      let value = totalBalance - txFee >= 0 ? (totalBalance - txFee).toFixed(8) : 0;
       setFormData({
         ...formData,
-        value: value
+        value
       });
       await calcElegibles(value);
-      setLoading(false);
-    } catch (err) {}
+    } catch (err) {
+      message.error("Unable to calculate the max value due to network errors");
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -182,7 +189,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
             <Card
               title={
                 <h2>
-                  <Icon type="dollar" /> Pay Dividends
+                  <Icon type="dollar-circle" theme="filled" /> Pay Dividends
                 </h2>
               }
               bordered={false}
@@ -199,7 +206,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
                         holders.
                       </Paragraph>
                       <Paragraph>
-                        <a href="https://t.me/piticocash" target="_blank">
+                        <a href="https://t.me/piticocash" target="_blank" rel="noopener noreferrer">
                           Join our Telegram Group to get your $PTCH.
                         </a>
                       </Paragraph>
@@ -261,29 +268,26 @@ const PayDividends = ({ SLP, token, onClose }) => {
                   <Row type="flex">
                     <Col span={24}>
                       <Form style={{ width: "auto", marginBottom: "1em" }} noValidate>
-                        <Form.Item
+                        <FormItemWithMaxAddon
                           style={{ margin: 0 }}
                           validateStatus={
                             !formData.dirty && Number(formData.value) <= 0 ? "error" : ""
                           }
                           help={
                             !formData.dirty && Number(formData.value) < DUST
-                              ? "BCH dividend must be greater than 0.00005 BCH"
+                              ? "Must be greater than 0"
                               : ""
                           }
-                        >
-                          <Input
-                            prefix={<img src={bchLogo} alt="" width={16} height={16} />}
-                            step="0.00000001"
-                            suffix="BCH"
-                            name="value"
-                            placeholder="value"
-                            onChange={e => handleChange(e)}
-                            required
-                            value={formData.value}
-                            addonAfter={<Button onClick={onMaxDividend}>max</Button>}
-                          />
-                        </Form.Item>
+                          onMax={onMaxDividend}
+                          inputProps={{
+                            suffix: "BCH",
+                            name: "value",
+                            placeholder: "value",
+                            onChange: e => handleChange(e),
+                            required: true,
+                            value: formData.value
+                          }}
+                        />
                       </Form>
                     </Col>
                     <Col>
