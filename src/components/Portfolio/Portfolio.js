@@ -4,7 +4,7 @@ import { EnhancedCard } from "./EnhancedCard";
 import { WalletContext } from "../../utils/context";
 import { Meta } from "antd/lib/list/Item";
 import Img from "react-image";
-import Identicon from "./Identicon";
+import makeBlockie from "ethereum-blockies-base64";
 import Mint from "./Mint/Mint";
 import Transfer from "./Transfer/Transfer";
 import PayDividends from "./PayDividends/PayDividends";
@@ -358,10 +358,12 @@ export default () => {
                     <Img
                       src={`${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`}
                       unloader={
-                        <Identicon
+                        <img
+                          heigh="60"
+                          width="60"
+                          style={{ borderRadius: "50%" }}
                           key={`identicon-${token.tokenId}`}
-                          style={{ tranform: "translate(-100px,100px)" }}
-                          seed={token.tokenId}
+                          src={makeBlockie(token.tokenId)}
                         />
                       }
                     />
