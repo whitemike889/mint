@@ -49,7 +49,7 @@ export const sendBch = withSLP(async (SLP, wallet, utxos, { addresses, values })
       }
     }
 
-    // amount to send back to the sending address.
+    // amount to send back to the remainder address.
     const remainder = Math.floor(originalAmount.minus(satoshisToSend).minus(txFee));
 
     if (remainder < 0) {

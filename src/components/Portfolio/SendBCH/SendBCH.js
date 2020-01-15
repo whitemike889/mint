@@ -10,6 +10,7 @@ import { sendBch, calcFee } from "../../../utils/sendBch";
 import getWalletDetails from "../../../utils/getWalletDetails";
 import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs";
 import getTransactionHistory from "../../../utils/getTransactionHistory";
+import withSLP from "../../../utils/withSLP";
 
 const StyledButtonWrapper = styled.div`
   display: flex;
@@ -96,12 +97,14 @@ const SendBCH = ({ onClose, outerAction }) => {
     }
   };
 
-  const getBchHistory = async () => {
+  const getBchHistory = withSLP(async SLP => {
     setLoading(true);
     try {
-      const resp = await getTransactionHistory(wallet.cashAddresses.slice(0, 1), [
-        balances.bitcoinCashBalance[0].transactions
-      ]);
+      const details = await SLP.Address.details(wallet.cashAddresses);
+      const resp = await getTransactionHistory(
+        wallet.cashAddresses,
+        details.map(detail => detail.transactions)
+      );
       await fetch("https://markets.api.bitcoin.com/live/bitcoin")
         .then(response => {
           return response.json();
@@ -122,7 +125,7 @@ const SendBCH = ({ onClose, outerAction }) => {
     }
 
     setLoading(false);
-  };
+  });
 
   const handleChangeAction = () => {
     if (action === "send") {
