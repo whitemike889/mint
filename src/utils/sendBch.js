@@ -11,7 +11,7 @@ export const sendBch = withSLP(async (SLP, wallet, utxos, { addresses, values })
     }
 
     const value = values.reduce((previous, current) => new Big(current).plus(previous), new Big(0));
-    const REMAINDER_ADDR = wallet.cashAddress;
+    const REMAINDER_ADDR = wallet.Path145.cashAddress;
 
     const inputUtxos = [];
     let transactionBuilder;

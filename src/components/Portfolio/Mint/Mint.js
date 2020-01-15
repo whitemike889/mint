@@ -28,7 +28,7 @@ const Mint = ({ token, onClose }) => {
   const [formData, setFormData] = useState({
     dirty: true,
     quantity: 0,
-    baton: wallet.slpAddress
+    baton: wallet.Path245.slpAddress
   });
   const [loading, setLoading] = useState(false);
 
@@ -112,14 +112,14 @@ const Mint = ({ token, onClose }) => {
                       <br />
                       <Paragraph>
                         <ButtonQR
-                          toAddress={wallet.cashAddress}
+                          toAddress={wallet.Path145.cashAddress}
                           sizeQR={125}
                           step={"fresh"}
                           amountSatoshis={0}
                         />
                       </Paragraph>
                       <Paragraph style={{ overflowWrap: "break-word" }} copyable>
-                        {wallet.cashAddress}
+                        {wallet.Path145.cashAddress}
                       </Paragraph>
                       <Paragraph>You currently have 0 BCH.</Paragraph>
                       <Paragraph>

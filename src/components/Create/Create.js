@@ -110,10 +110,10 @@ const Create = ({ history }) => {
               bordered={true}
             >
               <div>
-                {!loadingContext && !balances.balance && !balances.unconfirmedBalance ? (
+                {!loadingContext && !balances.totalBalance ? (
                   <>
                     <Paragraph>
-                      <QRCode id="borderedQRCode" address={wallet && wallet.cashAddress} />
+                      <QRCode id="borderedQRCode" address={wallet && wallet.Path145.cashAddress} />
                     </Paragraph>
                     <Paragraph>You currently have 0 BCH.</Paragraph>
                     <Paragraph>

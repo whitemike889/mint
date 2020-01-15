@@ -332,7 +332,7 @@ export default () => {
                           </div>
                         ))}
                         <a
-                          href={`https://explorer.bitcoin.com/bch/address/${wallet.slpAddress}`}
+                          href={`https://explorer.bitcoin.com/bch/address/${wallet.Path245.slpAddress}`}
                           target="_blank"
                           rel="noopener noreferrer"
                         >

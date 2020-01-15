@@ -143,7 +143,11 @@ const App = () => {
                     <div>
                       <QRCode
                         id="borderedQRCode"
-                        address={address === "slpAddress" ? wallet.slpAddress : wallet.cashAddress}
+                        address={
+                          address === "slpAddress"
+                            ? wallet.Path245.slpAddress
+                            : wallet.Path145.cashAddress
+                        }
                       />
                     </div>
 

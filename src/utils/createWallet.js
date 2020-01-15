@@ -5,8 +5,7 @@ export const getWallet = () => {
   let wallet;
   try {
     wallet = getWalletDetails(JSON.parse(window.localStorage.getItem("wallet") || undefined));
-    if (!(wallet || {}).slpAddresses && (wallet || {}).mnemonic)
-      window.localStorage.setItem("wallet", JSON.stringify(wallet));
+    window.localStorage.setItem("wallet", JSON.stringify(wallet));
     return wallet;
   } catch (error) {}
   return wallet;

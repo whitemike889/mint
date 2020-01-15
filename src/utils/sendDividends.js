@@ -25,7 +25,7 @@ export const getEligibleAddresses = withSLP(async (SLP, wallet, balances, value)
   const walletDetails = getWalletDetails(wallet);
 
   let eligibleBalances = [
-    ...balances.filter(balance => balance.slpAddress !== walletDetails.Bip44.slpAddress)
+    ...balances.filter(balance => balance.slpAddress !== walletDetails.Path245.slpAddress)
   ];
   while (true) {
     const tokenBalanceSum = eligibleBalances.reduce((p, c) => c.tokenBalance + p, 0);
@@ -70,5 +70,5 @@ export const sendDividends = async (wallet, utxos, { value, tokenId }) => {
 
   const walletDetails = getWalletDetails(wallet);
 
-  return await sendBch(walletDetails.Bip44, utxos, { addresses, values });
+  return await sendBch(walletDetails.Path145, utxos, { addresses, values });
 };

@@ -7,7 +7,6 @@ import Paragraph from "antd/lib/typography/Paragraph";
 import { PlaneIcon } from "../../Common/CustomIcons";
 import { QRCode } from "../../Common/QRCode";
 import { sendBch, calcFee } from "../../../utils/sendBch";
-import getWalletDetails from "../../../utils/getWalletDetails";
 import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs";
 import getTransactionHistory from "../../../utils/getTransactionHistory";
 import withSLP from "../../../utils/withSLP";
@@ -47,7 +46,7 @@ const SendBCH = ({ onClose, outerAction }) => {
     const { address, value } = formData;
 
     try {
-      const link = await sendBch(getWalletDetails(wallet).Bip44, utxos, {
+      const link = await sendBch(wallet.Path145, utxos, {
         addresses: [address],
         values: [value]
       });
@@ -189,7 +188,7 @@ const SendBCH = ({ onClose, outerAction }) => {
                         You currently have 0 BCH. Deposit some funds to use this feature.
                       </Paragraph>
                       <Paragraph>
-                        <QRCode id="borderedQRCode" address={wallet.cashAddress} />
+                        <QRCode id="borderedQRCode" address={wallet.Path145.cashAddress} />
                       </Paragraph>
                     </>
                   </StyledButtonWrapper>
@@ -287,7 +286,7 @@ const SendBCH = ({ onClose, outerAction }) => {
                     </div>
                   ))}
                   <a
-                    href={`https://explorer.bitcoin.com/bch/address/${wallet.cashAddress}`}
+                    href={`https://explorer.bitcoin.com/bch/address/${wallet.Path145.cashAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

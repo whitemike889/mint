@@ -23,22 +23,20 @@ const getWalletDetails = (SLPInstance, wallet) => {
   if (NETWORK === `mainnet`) masterHDNode = SLPInstance.HDNode.fromSeed(rootSeedBuffer);
   else masterHDNode = SLPInstance.HDNode.fromSeed(rootSeedBuffer, "testnet");
 
-  const walletBip44 = deriveAccount({ masterHDNode, path: "m/44'/245'/0'/0/0" });
-  const walletPath145 = deriveAccount({ masterHDNode, path: "m/44'/145'/0'/0/0" });
-  const walletPathZero = deriveAccount({ masterHDNode, path: "m/44'/0'/0'/0/0" });
+  const Path245 = deriveAccount({ masterHDNode, path: "m/44'/245'/0'/0/0" });
+  const Path145 = deriveAccount({ masterHDNode, path: "m/44'/145'/0'/0/0" });
+  const PathZero = deriveAccount({ masterHDNode, path: "m/44'/0'/0'/0/0" });
+  const Accounts = [Path245, Path145, PathZero];
 
   return {
     mnemonic: wallet.mnemonic,
-    cashAddress: walletBip44.cashAddress,
-    slpAddress: walletBip44.slpAddress,
-    legacyAddress: walletBip44.legacyAddress,
-    cashAddresses: [walletBip44.cashAddress, walletPath145.cashAddress, walletPathZero.cashAddress],
-    slpAddresses: [walletBip44.slpAddress, walletPath145.slpAddress, walletPathZero.slpAddress],
+    cashAddresses: [Path245.cashAddress, Path145.cashAddress, PathZero.cashAddress],
+    slpAddresses: [Path245.slpAddress, Path145.slpAddress, PathZero.slpAddress],
 
-    Bip44: walletBip44,
-    Path145: walletPath145,
-    PathZero: walletPathZero,
-    Accounts: [walletBip44, walletPath145, walletPathZero]
+    Path245,
+    Path145,
+    PathZero,
+    Accounts
   };
 };
 
