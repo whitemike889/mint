@@ -84,8 +84,8 @@ const update = withSLP(
       const slpBalancesAndUtxos = await bitboxNetwork.getAllSlpBalancesAndUtxos(
         wallet.slpAddresses
       );
-      setSlpBalancesAndUtxos(normalizeSlpBalancesAndUtxos(SLP, slpBalancesAndUtxos, wallet));
 
+      setSlpBalancesAndUtxos(normalizeSlpBalancesAndUtxos(SLP, slpBalancesAndUtxos, wallet));
       setUtxos(normalizeUtxos(SLP, slpBalancesAndUtxos, wallet));
 
       setBalances(normalizeBalance(SLP, slpBalancesAndUtxos));
@@ -130,12 +130,10 @@ export const useWallet = () => {
     const updateRoutine = () => {
       update({
         wallet: getWallet(),
-        tokens,
         setBalances,
         setTokens,
         setSlpBalancesAndUtxos,
-        setUtxos,
-        setLoading
+        setUtxos
       }).finally(() => {
         setLoading(false);
         setTimeout(updateRoutine, 10000);
@@ -153,14 +151,25 @@ export const useWallet = () => {
     tokens,
     loading,
     update: () =>
-      update({ wallet, setBalances, setTokens, setLoading, setSlpBalancesAndUtxos, setUtxos }),
+      update({
+        wallet: getWallet(),
+        setBalances,
+        setTokens,
+        setLoading,
+        setSlpBalancesAndUtxos,
+        setUtxos
+      }),
     createWallet: importMnemonic => {
+      setLoading(true);
       const newWallet = createWallet(importMnemonic);
       setWallet(newWallet);
-      setLoading(true);
-      update({ wallet: newWallet, setBalances, setTokens, setLoading }).finally(() =>
-        setLoading(false)
-      );
+      update({
+        wallet: newWallet,
+        setBalances,
+        setTokens,
+        setSlpBalancesAndUtxos,
+        setUtxos
+      }).finally(() => setLoading(false));
     }
   };
 };

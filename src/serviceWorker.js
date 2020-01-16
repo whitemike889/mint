@@ -16,6 +16,10 @@ workbox.routing.registerRoute(
   async ({ event, url }) => {
     try {
       const cache = await caches.open("api-cache");
+      const cacheKeys = await cache.keys();
+      if (cacheKeys.length > 200) {
+        await Promise.all(cacheKeys.map(key => cache.delete(key)));
+      }
       const requestBody = await event.request.clone().text();
 
       try {
