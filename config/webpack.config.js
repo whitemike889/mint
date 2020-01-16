@@ -119,7 +119,7 @@ module.exports = function(webpackEnv) {
             "@item-active-bg": "#272733",
             "@border-color-split": "#17171f",
             "@menu-dark-bg": "#131720",
-            "@body-background": "#20242D",
+            "@body-background": "#FBFBFD",
             "@component-background": "#FFFFFF",
             "@layout-body-background": "#FBFBFD",
             "@tooltip-bg": "#191922",
