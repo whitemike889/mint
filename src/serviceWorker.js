@@ -1,9 +1,9 @@
+workbox.setConfig({
+  debug: false
+});
+
 workbox.core.skipWaiting();
 workbox.core.clientsClaim();
-
-workbox.setConfig({
-  debug: true
-});
 
 const cachedPathNames = [
   "/v2/transaction/details",
