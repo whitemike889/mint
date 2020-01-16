@@ -9,7 +9,7 @@ import { PlaneIcon } from "../../Common/CustomIcons";
 import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs";
 
 const Transfer = ({ token, onClose }) => {
-  const { wallet, slpBalancesAndUtxo } = React.useContext(WalletContext);
+  const { wallet, slpBalancesAndUtxos } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: true,
     quantity: "",
@@ -31,7 +31,7 @@ const Transfer = ({ token, onClose }) => {
     const { quantity, address } = formData;
 
     try {
-      const link = await sendToken(wallet, slpBalancesAndUtxo, {
+      const link = await sendToken(wallet, slpBalancesAndUtxos, {
         tokenId: token.tokenId,
         amount: quantity,
         tokenReceiverAddress: address

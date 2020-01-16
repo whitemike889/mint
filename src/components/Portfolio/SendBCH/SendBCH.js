@@ -46,7 +46,7 @@ const SendBCH = ({ onClose, outerAction }) => {
     const { address, value } = formData;
 
     try {
-      const link = await sendBch(wallet.Path145, utxos, {
+      const link = await sendBch(wallet, utxos, {
         addresses: [address],
         values: [value]
       });
