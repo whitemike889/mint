@@ -359,6 +359,7 @@ export default () => {
                       src={`${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`}
                       unloader={
                         <img
+                          alt={`identicon of tokenId ${token.tokenId} `}
                           heigh="60"
                           width="60"
                           style={{ borderRadius: "50%" }}
