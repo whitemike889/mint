@@ -1,6 +1,10 @@
 workbox.core.skipWaiting();
 workbox.core.clientsClaim();
 
+workbox.setConfig({
+  debug: true
+});
+
 const cachedPathNames = [
   "/v2/transaction/details",
   "/v2/rawtransactions/getRawTransaction",

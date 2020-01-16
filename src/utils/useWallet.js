@@ -138,7 +138,7 @@ export const useWallet = () => {
         setLoading
       }).finally(() => {
         setLoading(false);
-        setTimeout(updateRoutine, 5000);
+        setTimeout(updateRoutine, 10000);
       });
     };
 
