@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { WalletContext } from "../../utils/context";
-import { Input, Button, Icon, Row, Col, Card, Form } from "antd";
-import StyledOnboarding from "../Common/StyledPage";
+import { Input, Button, Icon, Row, Col, Card, Form, Collapse } from "antd";
+import StyledOnboarding from "../Common/StyledOnBoarding";
 
 export const OnBoarding = ({ history }) => {
   const ContextValue = React.useContext(WalletContext);
@@ -10,6 +10,8 @@ export const OnBoarding = ({ history }) => {
     dirty: true,
     mnemonic: ""
   });
+  const [openKey, setOpenKey] = useState("");
+  const [warningRead, setWarningRead] = useState(false);
 
   async function submit() {
     setFormData({
@@ -28,6 +30,14 @@ export const OnBoarding = ({ history }) => {
     const { value, name } = e.target;
 
     setFormData(p => ({ ...p, [name]: value }));
+  };
+
+  const handleWarning = () => setWarningRead(true);
+
+  const handleCollapseChange = key => {
+    setOpenKey(key);
+    setFormData(p => ({ ...p, mnemonic: "" }));
+    if (key !== "2") setWarningRead(false);
   };
 
   return (
@@ -60,21 +70,77 @@ export const OnBoarding = ({ history }) => {
             bordered={false}
           >
             <Form style={{ width: "auto" }}>
-              <Form.Item
-                validateStatus={!formData.dirty && !formData.mnemonic ? "error" : ""}
-                help={!formData.dirty && !formData.mnemonic ? "Should not be empty" : ""}
-              >
-                <Input
-                  prefix={<Icon type="lock" />}
-                  placeholder="mnemonic"
-                  name="mnemonic"
-                  onChange={e => handleChange(e)}
-                  required
-                />
-              </Form.Item>
-              <p>
-                <em>Only 245' path is currently supported for wallet imports.</em>
-              </p>
+              <Collapse accordion onChange={key => handleCollapseChange(key)}>
+                <Collapse.Panel
+                  header="Import mint.bitcoin.com wallet"
+                  key="1"
+                  style={{ textAlign: "left" }}
+                >
+                  {openKey === "1" && (
+                    <Form.Item
+                      validateStatus={!formData.dirty && !formData.mnemonic ? "error" : ""}
+                      help={!formData.dirty && !formData.mnemonic ? "Should not be empty" : ""}
+                    >
+                      <Input
+                        prefix={<Icon type="lock" />}
+                        placeholder="mnemonic (seed phrase)"
+                        name="mnemonic"
+                        onChange={e => handleChange(e)}
+                        required
+                      />
+                    </Form.Item>
+                  )}
+                </Collapse.Panel>
+
+                <Collapse.Panel
+                  header="Import Badger Mobile wallet"
+                  key="2"
+                  style={{ textAlign: "left" }}
+                >
+                  {openKey === "2" && warningRead ? (
+                    <Form.Item
+                      validateStatus={!formData.dirty && !formData.mnemonic ? "error" : ""}
+                      help={!formData.dirty && !formData.mnemonic ? "Should not be empty" : ""}
+                    >
+                      <Input
+                        prefix={<Icon type="lock" />}
+                        placeholder="mnemonic (seed phrase)"
+                        name="mnemonic"
+                        onChange={e => handleChange(e)}
+                        required
+                      />
+                    </Form.Item>
+                  ) : (
+                    openKey === "2" &&
+                    !warningRead && (
+                      <div style={{ textAlign: "center" }}>
+                        <h3 style={{ marginBottom: 0 }}>
+                          <Icon type="warning" />
+                        </h3>
+                        <strong>Be careful typing your seed into a browser!</strong>
+                        <br />
+                        <Button style={{ marginTop: "12px" }} onClick={() => handleWarning()}>
+                          Got it
+                        </Button>
+                      </div>
+                    )
+                  )}
+                </Collapse.Panel>
+
+                <Collapse.Panel
+                  header="Import Bitcoin.com wallet"
+                  style={{ textAlign: "left" }}
+                  key="3"
+                >
+                  <div style={{ textAlign: "center" }}>
+                    <h3 style={{ marginBottom: 0 }}>
+                      <Icon type="clock-circle" />
+                    </h3>
+                    <strong>Coming Soon</strong>
+                  </div>
+                </Collapse.Panel>
+              </Collapse>
+
               <div style={{ paddingTop: "12px" }}>
                 <Button className="bitcoincom-mint-import-wallet" onClick={() => submit()}>
                   Import
