@@ -55,7 +55,7 @@ const App = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-  console.log("document.body.scrollHeight :", document.body.scrollHeight);
+
   return (
     <Router>
       <div className="App">
