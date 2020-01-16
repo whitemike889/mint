@@ -1,23 +1,6 @@
 import getWalletDetails from "./getWalletDetails";
 import withSLP from "./withSLP";
 
-const MIN_SATOSHIS = 546;
-
-const chooseFundingAccount = (wallet, slpBalancesAndUtxos) => {
-  const { Path245, Path145 } = getWalletDetails(wallet);
-
-  let FundingAccount = Path145;
-  const slpBalanceAndUtxos = slpBalancesAndUtxos.find(
-    slpBalanceAndUtxos => slpBalanceAndUtxos.account.slpAddress === Path145.slpAddress
-  );
-
-  if (slpBalanceAndUtxos.result.satoshis_available_bch < MIN_SATOSHIS) {
-    FundingAccount = Path245;
-  }
-
-  return FundingAccount;
-};
-
 const broadcastTransaction = async (SLPInstance, wallet, slpBalancesAndUtxos, { ...args }) => {
   try {
     const NETWORK = process.env.REACT_APP_NETWORK;
@@ -28,8 +11,6 @@ const broadcastTransaction = async (SLPInstance, wallet, slpBalancesAndUtxos, { 
       (args.amount && args.tokenId && args.tokenReceiverAddress && "IS_SENDING");
 
     const { Path245, Path145 } = getWalletDetails(wallet);
-
-    // const FundingAccount = chooseFundingAccount(wallet, slpBalancesAndUtxos);
 
     const config = args;
     config.bchChangeReceiverAddress = Path145.cashAddress;

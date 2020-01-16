@@ -3,7 +3,6 @@
 import { Utils } from "slpjs";
 import withSLP from "./withSLP";
 import { sendBch, SATOSHIS_PER_BYTE } from "./sendBch";
-import getWalletDetails from "./getWalletDetails";
 
 export const DUST = 0.00005;
 

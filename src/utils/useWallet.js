@@ -65,15 +65,11 @@ const normalizeTokens = async (SLP, slpBalancesAndUtxos, wallet) => {
 
   const tokens = Object.values(tokensMap).sort((a, b) => (a.tokenId > b.tokenId ? 1 : -1));
 
-  try {
-    const infos = await getTokenInfo(wallet.slpAddresses, tokens.map(token => token.tokenId));
-    tokens.forEach(token => {
-      token.info = infos.find(i => i.tokenIdHex === token.tokenId);
-      token.balance = new Big(token.satoshisBalance).div(
-        new Big(Math.pow(10, token.info.decimals))
-      );
-    });
-  } catch (error) {}
+  const infos = await getTokenInfo(wallet.slpAddresses, tokens.map(token => token.tokenId));
+  tokens.forEach(token => {
+    token.info = infos.find(i => i.tokenIdHex === token.tokenId);
+    token.balance = new Big(token.satoshisBalance).div(new Big(Math.pow(10, token.info.decimals)));
+  });
 
   return tokens;
 };
@@ -93,7 +89,10 @@ const update = withSLP(
       setUtxos(normalizeUtxos(SLP, slpBalancesAndUtxos, wallet));
 
       setBalances(normalizeBalance(SLP, slpBalancesAndUtxos));
-      setTokens(await normalizeTokens(SLP, slpBalancesAndUtxos, wallet));
+
+      try {
+        setTokens(await normalizeTokens(SLP, slpBalancesAndUtxos, wallet));
+      } catch (error) {}
     } catch (error) {}
   }
 );
@@ -139,7 +138,7 @@ export const useWallet = () => {
         setLoading
       }).finally(() => {
         setLoading(false);
-        setTimeout(updateRoutine, 10000);
+        setTimeout(updateRoutine, 5000);
       });
     };
 
