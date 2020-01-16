@@ -15,7 +15,7 @@ export default () => {
                 <Icon type="eye" theme="filled" /> Audit
               </h2>
             }
-            bordered={false}
+            bordered={true}
           >
             <Title level={4}>Never trust, always verify.</Title>
             <Text>

@@ -48,7 +48,6 @@ const App = () => {
   };
 
   const handleResize = () => setMobile(window.innerWidth < 768);
-
   React.useEffect(() => {
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -56,7 +55,7 @@ const App = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-
+  console.log("document.body.scrollHeight :", document.body.scrollHeight);
   return (
     <Router>
       <div className="App">
@@ -67,8 +66,15 @@ const App = () => {
             collapsed={collapsed}
             onCollapse={() => setCollapesed(!collapsed)}
             width="256"
-            // style={{ flex: "0 0 256px" }}
-            style={mobile ? { position: "absolute", zIndex: "2", height: "100vh" } : null}
+            style={
+              mobile
+                ? {
+                    zIndex: "100",
+                    position: "absolute",
+                    height: !collapsed ? document.body.scrollHeight : "100vh"
+                  }
+                : null
+            }
           >
             <div className="logo">
               <img src={logo} alt="Bitcoin.com Mint" />
