@@ -30,8 +30,10 @@ workbox.routing.registerRoute(
         return response;
       } catch (error) {
         const response = await fetch(event.request.clone());
-        const body = await response.clone().text();
-        cache.put(`${url.pathname}/${requestBody}`, new Response(body, { status: 200 }));
+        if (response.status === 200) {
+          const body = await response.clone().text();
+          cache.put(`${url.pathname}/${requestBody}`, new Response(body, { status: 200 }));
+        }
         return response.clone();
       }
     } catch (err) {
