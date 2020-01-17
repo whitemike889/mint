@@ -54,23 +54,77 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenId) => {
     };
 
     if (queryResults.c.length) {
-      tokenTransactionHistory.confirmed = queryResults.c.map(el => ({
-        txid: el.txid,
-        detail: el.tokenDetails.detail,
-        balance: calculateTransactionBalance(el.tokenDetails.detail.outputs),
-        date: new Date(Number(el.blk.t) * 1000),
-        confirmed: true
-      }));
+      tokenTransactionHistory.confirmed = queryResults.c
+        .sort((x, y) => {
+          if (
+            x.tokenDetails.detail.transactionType === "GENESIS" ||
+            y.tokenDetails.detail.transactionType === "GENESIS"
+          ) {
+            return (
+              +(x.tokenDetails.detail.transactionType === "GENESIS") -
+              +(y.tokenDetails.detail.transactionType === "GENESIS")
+            );
+          }
+          if (
+            y.blk.t === x.blk.t &&
+            (x.tokenDetails.detail.transactionType === "MINT" ||
+              y.tokenDetails.detail.transactionType === "MINT") &&
+            x.tokenDetails.detail.transactionType !== "GENESIS" &&
+            y.tokenDetails.detail.transactionType !== "GENESIS"
+          ) {
+            return (
+              +(x.tokenDetails.detail.transactionType === "MINT") -
+              +(y.tokenDetails.detail.transactionType === "MINT")
+            );
+          }
+          if (y.blk.t === x.blk.t) {
+            return -1;
+          } else {
+            return y.blk.t - x.blk.t;
+          }
+        })
+        .map(el => ({
+          txid: el.txid,
+          detail: el.tokenDetails.detail,
+          balance: calculateTransactionBalance(el.tokenDetails.detail.outputs),
+          date: new Date(Number(el.blk.t) * 1000),
+          confirmed: true
+        }));
     }
 
     if (queryResults.u.length) {
-      tokenTransactionHistory.unconfirmed = queryResults.u.map(el => ({
-        txid: el.txid,
-        detail: el.tokenDetails.detail,
-        balance: calculateTransactionBalance(el.tokenDetails.detail.outputs),
-        date: new Date(),
-        confirmed: false
-      }));
+      tokenTransactionHistory.unconfirmed = queryResults.u
+        .sort((x, y) => {
+          if (
+            x.tokenDetails.detail.transactionType === "GENESIS" ||
+            y.tokenDetails.detail.transactionType === "GENESIS"
+          ) {
+            return (
+              +(x.tokenDetails.detail.transactionType === "GENESIS") -
+              +(y.tokenDetails.detail.transactionType === "GENESIS")
+            );
+          }
+          if (
+            (x.tokenDetails.detail.transactionType === "MINT" ||
+              y.tokenDetails.detail.transactionType === "MINT") &&
+            x.tokenDetails.detail.transactionType !== "GENESIS" &&
+            y.tokenDetails.detail.transactionType !== "GENESIS"
+          ) {
+            return (
+              +(x.tokenDetails.detail.transactionType === "MINT") -
+              +(y.tokenDetails.detail.transactionType === "MINT")
+            );
+          } else {
+            return -1;
+          }
+        })
+        .map(el => ({
+          txid: el.txid,
+          detail: el.tokenDetails.detail,
+          balance: calculateTransactionBalance(el.tokenDetails.detail.outputs),
+          date: new Date(),
+          confirmed: false
+        }));
     }
     const { confirmed, unconfirmed } = tokenTransactionHistory;
 

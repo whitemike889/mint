@@ -311,6 +311,8 @@ export default () => {
                                 {el.balance > 0
                                   ? el.detail.transactionType === "GENESIS"
                                     ? "Genesis"
+                                    : el.detail.transactionType === "MINT"
+                                    ? "Mint"
                                     : "Received"
                                   : "Sent"}
                               </p>
