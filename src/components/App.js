@@ -110,19 +110,27 @@ const App = () => {
                 </Menu.Item>
                 <Menu.SubMenu key="4" title={<span>Links</span>}>
                   <Menu.Item key="5">
-                    <a href="https://exchange.bitcoin.com/" target="_blank">
+                    <a
+                      href="https://exchange.bitcoin.com/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       Exchange
                     </a>
                   </Menu.Item>
                   <Menu.Item key="6">
                     {" "}
-                    <a href="https://cashgames.bitcoin.com/home" target="_blank">
+                    <a
+                      href="https://cashgames.bitcoin.com/home"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       Games
                     </a>
                   </Menu.Item>
                   <Menu.Item key="7">
                     {" "}
-                    <a href="https://local.bitcoin.com" target="_blank">
+                    <a href="https://local.bitcoin.com" target="_blank" rel="noopener noreferrer">
                       Trade Locally
                     </a>
                   </Menu.Item>
@@ -141,7 +149,11 @@ const App = () => {
                     <div>
                       <QRCode
                         id="borderedQRCode"
-                        address={address === "slpAddress" ? wallet.slpAddress : wallet.cashAddress}
+                        address={
+                          address === "slpAddress"
+                            ? wallet.Path245.slpAddress
+                            : wallet.Path145.cashAddress
+                        }
                       />
                     </div>
 
@@ -176,24 +188,6 @@ const App = () => {
                         Bitcoin Cash
                       </Radio.Button>
                     </Radio.Group>
-                    {/* {!loading ? (
-                  <List
-                    style={{ marginTop: 16 }}
-                    loading={loading}
-                    itemLayout="horizontal"
-                    dataSource={[
-                      {
-                        title: "BCH",
-                        description: balances.balance + balances.unconfirmedBalance || "0"
-                      }
-                    ]}
-                    renderItem={item => (
-                      <List.Item>
-                        <List.Item.Meta title={item.title} description={item.description} />
-                      </List.Item>
-                    )}
-                  />
-                ) : null} */}
                   </div>
                 </Menu.ItemGroup>
               ) : null}

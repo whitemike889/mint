@@ -10,7 +10,7 @@ const { Paragraph } = Typography;
 
 const Create = ({ history }) => {
   const ContextValue = React.useContext(WalletContext);
-  const { wallet, balances, loading: loadingContext } = ContextValue;
+  const { wallet, balances, loading: loadingContext, slpBalancesAndUtxos } = ContextValue;
   const [loading, setLoading] = React.useState(false);
   const [data, setData] = React.useState({
     dirty: true,
@@ -49,7 +49,7 @@ const Create = ({ history }) => {
     const { tokenName, tokenSymbol, documentHash, documentUri, amount, decimals } = data;
     try {
       const docUri = documentUri || "developer.bitcoin.com";
-      const link = await createToken(wallet, {
+      const link = await createToken(wallet, slpBalancesAndUtxos, {
         name: tokenName,
         symbol: tokenSymbol,
         documentHash,
@@ -110,10 +110,10 @@ const Create = ({ history }) => {
               bordered={true}
             >
               <div>
-                {!loadingContext && !balances.balance && !balances.unconfirmedBalance ? (
+                {!loadingContext && !balances.totalBalance ? (
                   <>
                     <Paragraph>
-                      <QRCode id="borderedQRCode" address={wallet && wallet.cashAddress} />
+                      <QRCode id="borderedQRCode" address={wallet && wallet.Path145.cashAddress} />
                     </Paragraph>
                     <Paragraph>You currently have 0 BCH.</Paragraph>
                     <Paragraph>

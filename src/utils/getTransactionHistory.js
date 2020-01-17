@@ -43,7 +43,7 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions) => {
 
     const bchTxIds = Array.from({ length: nonZeroIndexes.length });
     nonZeroIndexes.forEach((e, i) => {
-      bchTxIds[i] = transactions[e].filter(el => !tokensTxIds[e].includes(el));
+      bchTxIds[i] = transactions[e].filter(el => tokensTxIds[e] && !tokensTxIds[e].includes(el));
     });
 
     let bchTransactions = [];

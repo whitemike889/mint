@@ -10,8 +10,6 @@ import Transfer from "./Transfer/Transfer";
 import PayDividends from "./PayDividends/PayDividends";
 import SendBCH from "./SendBCH/SendBCH";
 import { PlaneIcon, HammerIcon } from "../Common/CustomIcons";
-import MoreCardOptions from "./MoreCardOptions";
-import PayDividendsOption from "./PayDividendsOption";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { OnBoarding } from "../OnBoarding/OnBoarding";
 import getTokenTransactionHistory from "../../utils/getTokenTransactionHistory";
@@ -31,7 +29,7 @@ export default () => {
   const getTokenHistory = async tokenId => {
     setLoadingTokenHistory(true);
     try {
-      const resp = await getTokenTransactionHistory(wallet.slpAddresses.slice(0, 1), tokenId);
+      const resp = await getTokenTransactionHistory(wallet.slpAddresses, tokenId);
 
       setHistory(resp);
     } catch (err) {
@@ -307,6 +305,7 @@ export default () => {
                             <a
                               href={`https://explorer.bitcoin.com/bch/tx/${el.txid}`}
                               target="_blank"
+                              rel="noopener noreferrer"
                             >
                               <p>
                                 {el.balance > 0
@@ -333,8 +332,9 @@ export default () => {
                           </div>
                         ))}
                         <a
-                          href={`https://explorer.bitcoin.com/bch/address/${wallet.slpAddress}`}
+                          href={`https://explorer.bitcoin.com/bch/address/${wallet.Path245.slpAddress}`}
                           target="_blank"
+                          rel="noopener noreferrer"
                         >
                           <p>Full History</p>
                         </a>
@@ -359,6 +359,7 @@ export default () => {
                       src={`${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`}
                       unloader={
                         <img
+                          alt={`identicon of tokenId ${token.tokenId} `}
                           heigh="60"
                           width="60"
                           style={{ borderRadius: "50%" }}
@@ -407,7 +408,7 @@ export default () => {
                           fontWeight: "bold"
                         }}
                       >
-                        {token.balance.toString()}
+                        {token.balance >= 0 ? token.balance.toString() : ""}
                       </div>
                     </div>
                   }

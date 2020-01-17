@@ -77,7 +77,7 @@ const getTokensBalance = async (SLP, slpAddresses) => {
       el.tokenBalanceByAddress = Array.from({ length: addresses.length });
       addresses.forEach((slpAddress, index) => {
         const balanceByAddress = el.outputs.reduce((prev, cur) => {
-          if (cur.address === slpAddress) return prev + +cur.slpAmount;
+          if (cur.address === slpAddress) return prev + cur.slpAmount;
           return prev;
         }, 0);
 

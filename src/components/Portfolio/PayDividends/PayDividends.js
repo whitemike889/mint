@@ -6,17 +6,15 @@ import { WalletContext } from "../../../utils/context";
 import {
   sendDividends,
   getBalancesForToken,
-  getEligibleAddresses,
-  DUST
+  DUST,
+  getEligibleAddresses
 } from "../../../utils/sendDividends";
 import { Card, Icon, Form, Button, Alert, Spin, notification, Badge, Tooltip, message } from "antd";
 import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
 import isPiticoTokenHolder from "../../../utils/isPiticoTokenHolder";
 import debounce from "../../../utils/debounce";
-import { getBalanceFromUtxos, getBCHUtxos } from "../../../utils/sendBch";
 import { FormItemWithMaxAddon } from "../EnhancedInputs";
-import { retry } from "../../../utils/retry";
 
 const StyledPayDividends = styled.div`
   * {
@@ -36,7 +34,7 @@ const StyledStat = styled.div`
 
 const PayDividends = ({ SLP, token, onClose }) => {
   const ContextValue = React.useContext(WalletContext);
-  const { wallet, tokens, balances } = ContextValue;
+  const { wallet, tokens, balances, utxos } = ContextValue;
   const [formData, setFormData] = useState({
     dirty: true,
     value: "",
@@ -96,7 +94,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
     setLoading(true);
     const { value } = formData;
     try {
-      const link = await sendDividends(wallet, {
+      const link = await sendDividends(wallet, utxos, {
         value,
         tokenId: token.tokenId
       });
@@ -165,8 +163,6 @@ const PayDividends = ({ SLP, token, onClose }) => {
     setLoading(true);
 
     try {
-      const utxos = await retry(() => getBCHUtxos(wallet.cashAddress));
-      const totalBalance = getBalanceFromUtxos(utxos);
       const { txFee } = await getEligibleAddresses(wallet, stats.balances, totalBalance);
       let value = totalBalance - txFee >= 0 ? (totalBalance - txFee).toFixed(8) : 0;
       setFormData({

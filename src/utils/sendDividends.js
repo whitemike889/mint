@@ -3,7 +3,6 @@
 import { Utils } from "slpjs";
 import withSLP from "./withSLP";
 import { sendBch, SATOSHIS_PER_BYTE } from "./sendBch";
-import getWalletDetails from "./getWalletDetails";
 
 export const DUST = 0.00005;
 
@@ -22,10 +21,12 @@ export const getEligibleAddresses = withSLP(async (SLP, wallet, balances, value)
   let addresses = [];
   let values = [];
 
-  const walletDetails = getWalletDetails(wallet);
-
   let eligibleBalances = [
-    ...balances.filter(balance => balance.slpAddress !== walletDetails.Bip44.slpAddress)
+    ...balances.filter(
+      balance =>
+        balance.slpAddress !== wallet.Path245.slpAddress &&
+        balance.slpAddress !== wallet.Path145.slpAddress
+    )
   ];
   while (true) {
     const tokenBalanceSum = eligibleBalances.reduce((p, c) => c.tokenBalance + p, 0);
@@ -63,12 +64,10 @@ export const getEligibleAddresses = withSLP(async (SLP, wallet, balances, value)
   };
 });
 
-export const sendDividends = async (wallet, { value, tokenId }) => {
+export const sendDividends = async (wallet, utxos, { value, tokenId }) => {
   const outputs = await getBalancesForToken(tokenId);
 
   const { addresses, values } = await getEligibleAddresses(wallet, outputs, value);
 
-  const walletDetails = getWalletDetails(wallet);
-
-  return await sendBch(walletDetails.Bip44, { addresses, values });
+  return await sendBch(wallet, utxos, { addresses, values });
 };

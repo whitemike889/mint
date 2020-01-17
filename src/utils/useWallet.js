@@ -4,63 +4,105 @@ import React, { useEffect, useState } from "react";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { notification } from "antd";
 import Big from "big.js";
+import * as slpjs from "slpjs";
 import { getWallet, createWallet } from "./createWallet";
-import getBalance from "./getBalance";
-import getTokenInfo from "./getTokenInfo";
 import usePrevious from "./usePrevious";
+import withSLP from "./withSLP";
+import getTokenInfo from "./getTokenInfo";
 
-const tokensCache = {};
-
-const sortTokens = tokens => tokens.sort((a, b) => (a.tokenId > b.tokenId ? 1 : -1));
-
-const updateTokensInfo = async (slpAddresses, tokens = [], setTokens) => {
-  let infos = [];
-
-  try {
-    infos = await getTokenInfo(slpAddresses, tokens.map(token => token.tokenId));
-    infos.forEach(info => {
-      let index = tokens.findIndex(token => token.tokenId === info.tokenIdHex);
-      if (index !== -1) {
-        tokens[index] = {
-          ...tokens[index],
-          info
-        };
-        tokensCache[tokens[index].tokenId] = tokens[index];
-        setTokens(sortTokens([...tokens]));
-      }
-    });
-  } catch (err) {}
-};
-
-const update = async ({ wallet, tokens, setBalances, setTokens }) => {
-  try {
-    if (!wallet) {
-      return;
-    }
-
-    const balance = await getBalance(wallet, false);
-
-    setBalances({
-      ...balance
-    });
-
-    const tokens = balance.tokens.map(token =>
-      tokensCache[token.tokenId]
-        ? {
-            ...token,
-            info: tokensCache[token.tokenId].info
-          }
-        : token
+const normalizeSlpBalancesAndUtxos = (SLP, slpBalancesAndUtxos, wallet) => {
+  slpBalancesAndUtxos.forEach(balanceAndUtxos => {
+    const derivatedAccount = wallet.Accounts.find(
+      account => account.slpAddress === balanceAndUtxos.address
     );
-    setTokens(sortTokens(tokens));
-    await updateTokensInfo(wallet.slpAddresses.slice(0, 1), tokens, setTokens);
-  } catch (error) {}
+    balanceAndUtxos.account = derivatedAccount;
+  });
+
+  return slpBalancesAndUtxos.sort((a, b) =>
+    a.result.satoshis_available_bch > b.result.satoshis_available_bch ? -1 : 1
+  );
 };
+
+const normalizeUtxos = (SLP, slpBalancesAndUtxos) =>
+  slpBalancesAndUtxos.reduce(
+    (previousBalanceAndUtxos, balanceAndUtxos) => [
+      ...previousBalanceAndUtxos,
+      ...balanceAndUtxos.result.nonSlpUtxos.map(utxo => ({
+        ...utxo,
+        wif: balanceAndUtxos.account.fundingWif
+      }))
+    ],
+    []
+  );
+
+const normalizeBalance = (SLP, slpBalancesAndUtxos) => {
+  const totalBalanceInSatohis = slpBalancesAndUtxos.reduce(
+    (previousBalance, balance) => previousBalance + balance.result.satoshis_available_bch,
+    0
+  );
+  return {
+    totalBalanceInSatohis,
+    totalBalance: SLP.BitcoinCash.toBitcoinCash(totalBalanceInSatohis)
+  };
+};
+
+const normalizeTokens = async (SLP, slpBalancesAndUtxos, wallet) => {
+  const tokensMap = {};
+  slpBalancesAndUtxos.forEach(balanceAndUtxos => {
+    Object.entries(balanceAndUtxos.result.slpTokenBalances).forEach(tokenBalanceEntry => {
+      const tokenId = tokenBalanceEntry[0];
+      let token = tokensMap[tokenId]
+        ? tokensMap[tokenId]
+        : {
+            tokenId,
+            satoshisBalance: 0,
+            info: null
+          };
+      token.satoshisBalance += Number(tokenBalanceEntry[1]);
+      tokensMap[tokenId] = token;
+    });
+  });
+
+  const tokens = Object.values(tokensMap).sort((a, b) => (a.tokenId > b.tokenId ? 1 : -1));
+
+  const infos = await getTokenInfo(wallet.slpAddresses, tokens.map(token => token.tokenId));
+  tokens.forEach(token => {
+    token.info = infos.find(i => i.tokenIdHex === token.tokenId);
+    token.balance = new Big(token.satoshisBalance).div(new Big(Math.pow(10, token.info.decimals)));
+  });
+
+  return tokens;
+};
+
+const update = withSLP(
+  async (SLP, { wallet, setBalances, setTokens, setSlpBalancesAndUtxos, setUtxos }) => {
+    try {
+      if (!wallet) {
+        return;
+      }
+      const bitboxNetwork = new slpjs.BitboxNetwork(SLP);
+      const slpBalancesAndUtxos = await bitboxNetwork.getAllSlpBalancesAndUtxos(
+        wallet.slpAddresses
+      );
+
+      setSlpBalancesAndUtxos(normalizeSlpBalancesAndUtxos(SLP, slpBalancesAndUtxos, wallet));
+      setUtxos(normalizeUtxos(SLP, slpBalancesAndUtxos, wallet));
+
+      setBalances(normalizeBalance(SLP, slpBalancesAndUtxos));
+
+      try {
+        setTokens(await normalizeTokens(SLP, slpBalancesAndUtxos, wallet));
+      } catch (error) {}
+    } catch (error) {}
+  }
+);
 
 export const useWallet = () => {
   const [wallet, setWallet] = useState(getWallet());
   const [balances, setBalances] = useState({});
   const [tokens, setTokens] = useState([]);
+  const [slpBalancesAndUtxos, setSlpBalancesAndUtxos] = useState([]);
+  const [utxos, setUtxos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const previousBalances = usePrevious(balances);
@@ -88,10 +130,10 @@ export const useWallet = () => {
     const updateRoutine = () => {
       update({
         wallet: getWallet(),
-        tokens,
         setBalances,
         setTokens,
-        setLoading
+        setSlpBalancesAndUtxos,
+        setUtxos
       }).finally(() => {
         setLoading(false);
         setTimeout(updateRoutine, 10000);
@@ -103,18 +145,31 @@ export const useWallet = () => {
 
   return {
     wallet,
+    slpBalancesAndUtxos,
+    utxos,
     balances,
     tokens,
     loading,
-    update: () => update({ wallet, tokens, setBalances, setTokens, setLoading }),
-    updateTokensInfo: () => updateTokensInfo(tokens, setTokens),
+    update: () =>
+      update({
+        wallet: getWallet(),
+        setBalances,
+        setTokens,
+        setLoading,
+        setSlpBalancesAndUtxos,
+        setUtxos
+      }),
     createWallet: importMnemonic => {
+      setLoading(true);
       const newWallet = createWallet(importMnemonic);
       setWallet(newWallet);
-      setLoading(true);
-      update({ wallet: newWallet, tokens, setBalances, setTokens, setLoading }).finally(() =>
-        setLoading(false)
-      );
+      update({
+        wallet: newWallet,
+        setBalances,
+        setTokens,
+        setSlpBalancesAndUtxos,
+        setUtxos
+      }).finally(() => setLoading(false));
     }
   };
 };
