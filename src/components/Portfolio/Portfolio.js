@@ -71,7 +71,7 @@ export default () => {
   };
 
   const renderActions = (action, setAction, token) => {
-    const hasBaton = token.info && token.info.hasBaton;
+    const hasBaton = token.hasBaton;
     let actions = [
       <span
         onClick={() => {

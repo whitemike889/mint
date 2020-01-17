@@ -10,7 +10,7 @@ const { Paragraph } = Typography;
 
 const Create = ({ history }) => {
   const ContextValue = React.useContext(WalletContext);
-  const { wallet, balances, loading: loadingContext, slpBalancesAndUtxos } = ContextValue;
+  const { wallet, balances, loading: loadingContext } = ContextValue;
   const [loading, setLoading] = React.useState(false);
   const [data, setData] = React.useState({
     dirty: true,
@@ -49,7 +49,7 @@ const Create = ({ history }) => {
     const { tokenName, tokenSymbol, documentHash, documentUri, amount, decimals } = data;
     try {
       const docUri = documentUri || "developer.bitcoin.com";
-      const link = await createToken(wallet, slpBalancesAndUtxos, {
+      const link = await createToken(wallet, {
         name: tokenName,
         symbol: tokenSymbol,
         documentHash,

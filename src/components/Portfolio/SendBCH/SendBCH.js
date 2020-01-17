@@ -19,7 +19,7 @@ const StyledButtonWrapper = styled.div`
 `;
 
 const SendBCH = ({ onClose, outerAction }) => {
-  const { wallet, balances, utxos } = React.useContext(WalletContext);
+  const { wallet, balances, slpBalancesAndUtxos } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: true,
     value: "",
@@ -46,7 +46,7 @@ const SendBCH = ({ onClose, outerAction }) => {
     const { address, value } = formData;
 
     try {
-      const link = await sendBch(wallet, utxos, {
+      const link = await sendBch(wallet, slpBalancesAndUtxos.nonSlpUtxos, {
         addresses: [address],
         values: [value]
       });
@@ -84,7 +84,7 @@ const SendBCH = ({ onClose, outerAction }) => {
 
   const onMax = async () => {
     try {
-      const txFee = calcFee(utxos);
+      const txFee = calcFee(slpBalancesAndUtxos.nonSlpUtxos);
       let value =
         balances.totalBalance - txFee >= 0 ? (balances.totalBalance - txFee).toFixed(8) : 0;
       setFormData({
