@@ -110,6 +110,11 @@ const App = () => {
                 </Menu.Item>
                 <Menu.SubMenu key="4" title={<span>Links</span>}>
                   <Menu.Item key="5">
+                    <a href="https://free.bitcoin.com/" target="_blank" rel="noopener noreferrer">
+                      Faucet (Free BCH)
+                    </a>
+                  </Menu.Item>
+                  <Menu.Item key="6">
                     <a
                       href="https://exchange.bitcoin.com/"
                       target="_blank"
@@ -118,7 +123,7 @@ const App = () => {
                       Exchange
                     </a>
                   </Menu.Item>
-                  <Menu.Item key="6">
+                  <Menu.Item key="7">
                     {" "}
                     <a
                       href="https://cashgames.bitcoin.com/home"
@@ -128,7 +133,7 @@ const App = () => {
                       Games
                     </a>
                   </Menu.Item>
-                  <Menu.Item key="7">
+                  <Menu.Item key="8">
                     {" "}
                     <a href="https://local.bitcoin.com" target="_blank" rel="noopener noreferrer">
                       Trade Locally
