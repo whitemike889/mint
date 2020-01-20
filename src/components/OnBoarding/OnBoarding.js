@@ -1,7 +1,11 @@
 import React, { useState } from "react";
 import { WalletContext } from "../../utils/context";
 import { Input, Button, Icon, Row, Col, Card, Form, Collapse } from "antd";
+import Img from "react-image";
 import StyledOnboarding from "../Common/StyledOnBoarding";
+import bitcoinWalletLogo from "../../assets/bitcoin-com-wallet-icon.png";
+import badgerWalletLogo from "../../assets/badger-icon.png";
+import pixelSquareLogo from "../../assets/pixel-square-icon.png";
 
 export const OnBoarding = ({ history }) => {
   const ContextValue = React.useContext(WalletContext);
@@ -72,7 +76,17 @@ export const OnBoarding = ({ history }) => {
             <Form style={{ width: "auto" }}>
               <Collapse accordion onChange={key => handleCollapseChange(key)}>
                 <Collapse.Panel
-                  header="Import mint.bitcoin.com wallet"
+                  header={
+                    <>
+                      <Img
+                        style={{ marginBottom: "3px" }}
+                        src={pixelSquareLogo}
+                        width="16"
+                        height="16"
+                      />{" "}
+                      mint.bitcoin.com wallet
+                    </>
+                  }
                   key="1"
                   style={{ textAlign: "left" }}
                 >
@@ -93,7 +107,17 @@ export const OnBoarding = ({ history }) => {
                 </Collapse.Panel>
 
                 <Collapse.Panel
-                  header="Import Badger Mobile wallet"
+                  header={
+                    <>
+                      <Img
+                        style={{ marginBottom: "3px" }}
+                        src={badgerWalletLogo}
+                        width="16"
+                        height="16"
+                      />{" "}
+                      Badger Mobile wallet
+                    </>
+                  }
                   key="2"
                   style={{ textAlign: "left" }}
                 >
@@ -114,7 +138,7 @@ export const OnBoarding = ({ history }) => {
                     openKey === "2" &&
                     !warningRead && (
                       <div style={{ textAlign: "center" }}>
-                        <h3 style={{ marginBottom: 0 }}>
+                        <h3 style={{ marginBottom: 3 }}>
                           <Icon type="warning" />
                         </h3>
                         <strong>Be careful typing your seed into a browser!</strong>
@@ -128,7 +152,17 @@ export const OnBoarding = ({ history }) => {
                 </Collapse.Panel>
 
                 <Collapse.Panel
-                  header="Import Bitcoin.com wallet"
+                  header={
+                    <>
+                      <Img
+                        style={{ marginBottom: "3px" }}
+                        src={bitcoinWalletLogo}
+                        width="13"
+                        height="18"
+                      />{" "}
+                      Bitcoin.com wallet
+                    </>
+                  }
                   style={{ textAlign: "left" }}
                   key="3"
                 >
