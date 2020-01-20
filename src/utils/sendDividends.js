@@ -28,6 +28,7 @@ export const getEligibleAddresses = withSLP(async (SLP, wallet, balances, value)
         balance.slpAddress !== wallet.Path145.slpAddress
     )
   ];
+
   while (true) {
     const tokenBalanceSum = eligibleBalances.reduce((p, c) => c.tokenBalance + p, 0);
 

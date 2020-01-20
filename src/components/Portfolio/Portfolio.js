@@ -71,17 +71,9 @@ export default () => {
   };
 
   const renderActions = (action, setAction, token) => {
-    const hasBaton = token.hasBaton;
+    const { hasBaton, balance } = token;
+    const hasBalance = balance && balance.gt(0);
     let actions = [
-      <span
-        onClick={() => {
-          setAction("transfer");
-          setTokenCardAction(tokenCardAction !== null ? null : tokenCardAction);
-        }}
-      >
-        <PlaneIcon />
-        Send
-      </span>,
       <span
         onClick={() => {
           setAction("dividends");
@@ -89,12 +81,12 @@ export default () => {
         }}
       >
         <Icon style={{ fontSize: "18px" }} type="dollar-circle" theme="filled" />
-        {hasBaton ? "Dividends" : "Pay Dividends"}
+        {hasBaton && hasBalance ? "Dividends" : "Pay Dividends"}
       </span>
     ];
+
     if (hasBaton) {
-      actions.push(actions[1]);
-      actions[1] = (
+      actions.unshift(
         <span
           onClick={() => {
             setAction("mint");
@@ -102,6 +94,20 @@ export default () => {
           }}
         >
           <HammerIcon /> Mint
+        </span>
+      );
+    }
+
+    if (hasBalance) {
+      actions.unshift(
+        <span
+          onClick={() => {
+            setAction("transfer");
+            setTokenCardAction(tokenCardAction !== null ? null : tokenCardAction);
+          }}
+        >
+          <PlaneIcon />
+          Send
         </span>
       );
     }

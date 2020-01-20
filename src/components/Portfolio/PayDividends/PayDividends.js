@@ -57,7 +57,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
         setStats({
           ...stats,
           tokens: balancesForToken.totalBalance,
-          holders: balancesForToken.length ? balancesForToken.length - 1 : 0,
+          holders: balancesForToken.length ? balancesForToken.length : 0,
           balances: balancesForToken,
           txFee: 0
         });
