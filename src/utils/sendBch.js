@@ -1,5 +1,6 @@
 import Big from "big.js";
 import withSLP from "./withSLP";
+import { DUST } from "./sendDividends";
 
 export const SATOSHIS_PER_BYTE = 1.01;
 const NETWORK = process.env.REACT_APP_NETWORK;
@@ -20,7 +21,7 @@ export const sendBch = withSLP(async (SLP, wallet, utxos, { addresses, values })
     if (NETWORK === `mainnet`) transactionBuilder = new SLP.TransactionBuilder();
     else transactionBuilder = new SLP.TransactionBuilder("testnet");
 
-    const satoshisToSend = SLP.BitcoinCash.toSatoshi(value.toPrecision(8));
+    const satoshisToSend = SLP.BitcoinCash.toSatoshi(value.toFixed(8));
     let originalAmount = new Big(0);
     let txFee = 0;
     for (let i = 0; i < utxos.length; i++) {
@@ -59,10 +60,13 @@ export const sendBch = withSLP(async (SLP, wallet, utxos, { addresses, values })
     // add output w/ address and amount to send
     for (let i = 0; i < addresses.length; i++) {
       const address = addresses[i];
-      transactionBuilder.addOutput(address, SLP.BitcoinCash.toSatoshi(values[i]));
+      transactionBuilder.addOutput(
+        address,
+        SLP.BitcoinCash.toSatoshi(Number(values[i]).toFixed(8))
+      );
     }
 
-    if (remainder) {
+    if (remainder >= SLP.BitcoinCash.toSatoshi(DUST)) {
       transactionBuilder.addOutput(REMAINDER_ADDR, remainder);
     }
 

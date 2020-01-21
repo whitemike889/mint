@@ -1,6 +1,7 @@
 /* eslint-disable no-loop-func */
 
 import { Utils } from "slpjs";
+import Big from "big.js";
 import withSLP from "./withSLP";
 import { sendBch, SATOSHIS_PER_BYTE } from "./sendBch";
 
@@ -33,10 +34,9 @@ export const getEligibleAddresses = withSLP(async (SLP, wallet, balances, value)
     const tokenBalanceSum = eligibleBalances.reduce((p, c) => c.tokenBalance + p, 0);
 
     const newEligibleBalances = eligibleBalances.filter(eligibleBalance => {
-      const eligibleValue = Number(
-        ((eligibleBalance.tokenBalance / tokenBalanceSum) * value).toFixed(8)
-      );
-      if (eligibleValue > DUST) {
+      const eligibleValue = new Big(eligibleBalance.tokenBalance).div(tokenBalanceSum).mul(value);
+
+      if (eligibleValue.gte(DUST)) {
         addresses.push(Utils.toCashAddress(eligibleBalance.slpAddress));
         values.push(eligibleValue);
         return true;
@@ -55,8 +55,7 @@ export const getEligibleAddresses = withSLP(async (SLP, wallet, balances, value)
   }
 
   const byteCount = SLP.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2PKH: addresses.length + 1 });
-  const satoshisPerByte = SATOSHIS_PER_BYTE;
-  const txFee = SLP.BitcoinCash.toBitcoinCash(Math.floor(satoshisPerByte * byteCount)).toFixed(8);
+  const txFee = SLP.BitcoinCash.toBitcoinCash(Math.floor(SATOSHIS_PER_BYTE * byteCount)).toFixed(8);
 
   return {
     addresses,

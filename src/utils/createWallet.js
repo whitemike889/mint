@@ -1,12 +1,16 @@
 import withSLP from "./withSLP";
 import getWalletDetails from "./getWalletDetails";
 
+let wallet;
+
 export const getWallet = () => {
-  let wallet;
+  if (wallet) {
+    return wallet;
+  }
+
   try {
     wallet = getWalletDetails(JSON.parse(window.localStorage.getItem("wallet") || undefined));
     window.localStorage.setItem("wallet", JSON.stringify(wallet));
-    return wallet;
   } catch (error) {}
   return wallet;
 };
