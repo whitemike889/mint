@@ -10,8 +10,6 @@ import Transfer from "./Transfer/Transfer";
 import PayDividends from "./PayDividends/PayDividends";
 import SendBCH from "./SendBCH/SendBCH";
 import { PlaneIcon, HammerIcon } from "../Common/CustomIcons";
-import MoreCardOptions from "./MoreCardOptions";
-import PayDividendsOption from "./PayDividendsOption";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { OnBoarding } from "../OnBoarding/OnBoarding";
 import getTokenTransactionHistory from "../../utils/getTokenTransactionHistory";
@@ -31,7 +29,7 @@ export default () => {
   const getTokenHistory = async tokenId => {
     setLoadingTokenHistory(true);
     try {
-      const resp = await getTokenTransactionHistory(wallet.slpAddresses.slice(0, 1), tokenId);
+      const resp = await getTokenTransactionHistory(wallet.slpAddresses, tokenId);
 
       setHistory(resp);
     } catch (err) {
@@ -73,17 +71,9 @@ export default () => {
   };
 
   const renderActions = (action, setAction, token) => {
-    const hasBaton = token.info && token.info.hasBaton;
+    const { hasBaton, balance } = token;
+    const hasBalance = balance && balance.gt(0);
     let actions = [
-      <span
-        onClick={() => {
-          setAction("transfer");
-          setTokenCardAction(tokenCardAction !== null ? null : tokenCardAction);
-        }}
-      >
-        <PlaneIcon />
-        Send
-      </span>,
       <span
         onClick={() => {
           setAction("dividends");
@@ -91,12 +81,12 @@ export default () => {
         }}
       >
         <Icon style={{ fontSize: "18px" }} type="dollar-circle" theme="filled" />
-        {hasBaton ? "Dividends" : "Pay Dividends"}
+        {hasBaton && hasBalance ? "Dividends" : "Pay Dividends"}
       </span>
     ];
+
     if (hasBaton) {
-      actions.push(actions[1]);
-      actions[1] = (
+      actions.unshift(
         <span
           onClick={() => {
             setAction("mint");
@@ -104,6 +94,20 @@ export default () => {
           }}
         >
           <HammerIcon /> Mint
+        </span>
+      );
+    }
+
+    if (hasBalance) {
+      actions.unshift(
+        <span
+          onClick={() => {
+            setAction("transfer");
+            setTokenCardAction(tokenCardAction !== null ? null : tokenCardAction);
+          }}
+        >
+          <PlaneIcon />
+          Send
         </span>
       );
     }
@@ -307,11 +311,14 @@ export default () => {
                             <a
                               href={`https://explorer.bitcoin.com/bch/tx/${el.txid}`}
                               target="_blank"
+                              rel="noopener noreferrer"
                             >
                               <p>
                                 {el.balance > 0
                                   ? el.detail.transactionType === "GENESIS"
                                     ? "Genesis"
+                                    : el.detail.transactionType === "MINT"
+                                    ? "Mint"
                                     : "Received"
                                   : "Sent"}
                               </p>
@@ -333,8 +340,9 @@ export default () => {
                           </div>
                         ))}
                         <a
-                          href={`https://explorer.bitcoin.com/bch/address/${wallet.slpAddress}`}
+                          href={`https://explorer.bitcoin.com/bch/address/${wallet.Path245.slpAddress}`}
                           target="_blank"
+                          rel="noopener noreferrer"
                         >
                           <p>Full History</p>
                         </a>
@@ -359,6 +367,7 @@ export default () => {
                       src={`${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`}
                       unloader={
                         <img
+                          alt={`identicon of tokenId ${token.tokenId} `}
                           heigh="60"
                           width="60"
                           style={{ borderRadius: "50%" }}
@@ -407,7 +416,7 @@ export default () => {
                           fontWeight: "bold"
                         }}
                       >
-                        {token.balance.toString()}
+                        {token.balance >= 0 ? token.balance.toString() : ""}
                       </div>
                     </div>
                   }

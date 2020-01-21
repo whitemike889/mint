@@ -5,62 +5,49 @@ import Paragraph from "antd/lib/typography/Paragraph";
 import { notification } from "antd";
 import Big from "big.js";
 import { getWallet, createWallet } from "./createWallet";
-import getBalance from "./getBalance";
-import getTokenInfo from "./getTokenInfo";
 import usePrevious from "./usePrevious";
+import withSLP from "./withSLP";
+import getSlpBanlancesAndUtxos from "./getSlpBanlancesAndUtxos";
 
-const tokensCache = {};
+const normalizeSlpBalancesAndUtxos = (SLP, slpBalancesAndUtxos, wallet) => {
+  slpBalancesAndUtxos.nonSlpUtxos.forEach(utxo => {
+    const derivatedAccount = wallet.Accounts.find(account => account.cashAddress === utxo.address);
+    utxo.wif = derivatedAccount.fundingWif;
+  });
 
-const sortTokens = tokens => tokens.sort((a, b) => (a.tokenId > b.tokenId ? 1 : -1));
-
-const updateTokensInfo = async (slpAddresses, tokens = [], setTokens) => {
-  let infos = [];
-
-  try {
-    infos = await getTokenInfo(slpAddresses, tokens.map(token => token.tokenId));
-    infos.forEach(info => {
-      let index = tokens.findIndex(token => token.tokenId === info.tokenIdHex);
-      if (index !== -1) {
-        tokens[index] = {
-          ...tokens[index],
-          info
-        };
-        tokensCache[tokens[index].tokenId] = tokens[index];
-        setTokens(sortTokens([...tokens]));
-      }
-    });
-  } catch (err) {}
+  return slpBalancesAndUtxos;
 };
 
-const update = async ({ wallet, tokens, setBalances, setTokens }) => {
+const normalizeBalance = (SLP, slpBalancesAndUtxos) => {
+  const totalBalanceInSatohis = slpBalancesAndUtxos.nonSlpUtxos.reduce(
+    (previousBalance, utxo) => previousBalance + utxo.satoshis,
+    0
+  );
+  return {
+    totalBalanceInSatohis,
+    totalBalance: SLP.BitcoinCash.toBitcoinCash(totalBalanceInSatohis)
+  };
+};
+
+const update = withSLP(async (SLP, { wallet, setBalances, setTokens, setSlpBalancesAndUtxos }) => {
   try {
     if (!wallet) {
       return;
     }
+    const slpBalancesAndUtxos = await getSlpBanlancesAndUtxos(wallet.cashAddresses);
+    const { tokens } = slpBalancesAndUtxos;
 
-    const balance = await getBalance(wallet, false);
-
-    setBalances({
-      ...balance
-    });
-
-    const tokens = balance.tokens.map(token =>
-      tokensCache[token.tokenId]
-        ? {
-            ...token,
-            info: tokensCache[token.tokenId].info
-          }
-        : token
-    );
-    setTokens(sortTokens(tokens));
-    await updateTokensInfo(wallet.slpAddresses.slice(0, 1), tokens, setTokens);
+    setSlpBalancesAndUtxos(normalizeSlpBalancesAndUtxos(SLP, slpBalancesAndUtxos, wallet));
+    setBalances(normalizeBalance(SLP, slpBalancesAndUtxos));
+    setTokens(tokens);
   } catch (error) {}
-};
+});
 
 export const useWallet = () => {
   const [wallet, setWallet] = useState(getWallet());
   const [balances, setBalances] = useState({});
   const [tokens, setTokens] = useState([]);
+  const [slpBalancesAndUtxos, setSlpBalancesAndUtxos] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const previousBalances = usePrevious(balances);
@@ -88,13 +75,12 @@ export const useWallet = () => {
     const updateRoutine = () => {
       update({
         wallet: getWallet(),
-        tokens,
         setBalances,
         setTokens,
-        setLoading
+        setSlpBalancesAndUtxos
       }).finally(() => {
         setLoading(false);
-        setTimeout(updateRoutine, 10000);
+        setTimeout(updateRoutine, 5000);
       });
     };
 
@@ -103,18 +89,28 @@ export const useWallet = () => {
 
   return {
     wallet,
+    slpBalancesAndUtxos,
     balances,
     tokens,
     loading,
-    update: () => update({ wallet, tokens, setBalances, setTokens, setLoading }),
-    updateTokensInfo: () => updateTokensInfo(tokens, setTokens),
+    update: () =>
+      update({
+        wallet: getWallet(),
+        setBalances,
+        setTokens,
+        setLoading,
+        setSlpBalancesAndUtxos
+      }),
     createWallet: importMnemonic => {
+      setLoading(true);
       const newWallet = createWallet(importMnemonic);
       setWallet(newWallet);
-      setLoading(true);
-      update({ wallet: newWallet, tokens, setBalances, setTokens, setLoading }).finally(() =>
-        setLoading(false)
-      );
+      update({
+        wallet: newWallet,
+        setBalances,
+        setTokens,
+        setSlpBalancesAndUtxos
+      }).finally(() => setLoading(false));
     }
   };
 };

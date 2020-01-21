@@ -48,7 +48,6 @@ const App = () => {
   };
 
   const handleResize = () => setMobile(window.innerWidth < 768);
-
   React.useEffect(() => {
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -67,8 +66,15 @@ const App = () => {
             collapsed={collapsed}
             onCollapse={() => setCollapesed(!collapsed)}
             width="256"
-            // style={{ flex: "0 0 256px" }}
-            style={mobile ? { position: "absolute", zIndex: "2", height: "100vh" } : null}
+            style={
+              mobile
+                ? {
+                    zIndex: "100",
+                    position: "absolute",
+                    height: !collapsed ? document.body.scrollHeight : "100vh"
+                  }
+                : null
+            }
           >
             <div className="logo">
               <img src={logo} alt="Bitcoin.com Mint" />
@@ -148,7 +154,11 @@ const App = () => {
                     <div>
                       <QRCode
                         id="borderedQRCode"
-                        address={address === "slpAddress" ? wallet.slpAddress : wallet.cashAddress}
+                        address={
+                          address === "slpAddress"
+                            ? wallet.Path245.slpAddress
+                            : wallet.Path145.cashAddress
+                        }
                       />
                     </div>
 
@@ -183,24 +193,6 @@ const App = () => {
                         Bitcoin Cash
                       </Radio.Button>
                     </Radio.Group>
-                    {/* {!loading ? (
-                  <List
-                    style={{ marginTop: 16 }}
-                    loading={loading}
-                    itemLayout="horizontal"
-                    dataSource={[
-                      {
-                        title: "BCH",
-                        description: balances.balance + balances.unconfirmedBalance || "0"
-                      }
-                    ]}
-                    renderItem={item => (
-                      <List.Item>
-                        <List.Item.Meta title={item.title} description={item.description} />
-                      </List.Item>
-                    )}
-                  />
-                ) : null} */}
                   </div>
                 </Menu.ItemGroup>
               ) : null}

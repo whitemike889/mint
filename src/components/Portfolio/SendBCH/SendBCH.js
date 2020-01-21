@@ -6,11 +6,10 @@ import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { PlaneIcon } from "../../Common/CustomIcons";
 import { QRCode } from "../../Common/QRCode";
-import { sendBch, calcFee, getBCHUtxos, getBalanceFromUtxos } from "../../../utils/sendBch";
-import getWalletDetails from "../../../utils/getWalletDetails";
+import { sendBch, calcFee } from "../../../utils/sendBch";
 import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs";
 import getTransactionHistory from "../../../utils/getTransactionHistory";
-import { retry } from "../../../utils/retry";
+import withSLP from "../../../utils/withSLP";
 
 const StyledButtonWrapper = styled.div`
   display: flex;
@@ -20,7 +19,7 @@ const StyledButtonWrapper = styled.div`
 `;
 
 const SendBCH = ({ onClose, outerAction }) => {
-  const { wallet, balances } = React.useContext(WalletContext);
+  const { wallet, balances, slpBalancesAndUtxos } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: true,
     value: "",
@@ -47,7 +46,7 @@ const SendBCH = ({ onClose, outerAction }) => {
     const { address, value } = formData;
 
     try {
-      const link = await sendBch(getWalletDetails(wallet).Bip44, {
+      const link = await sendBch(wallet, slpBalancesAndUtxos.nonSlpUtxos, {
         addresses: [address],
         values: [value]
       });
@@ -84,12 +83,10 @@ const SendBCH = ({ onClose, outerAction }) => {
   };
 
   const onMax = async () => {
-    setLoading(true);
     try {
-      const utxos = await retry(() => getBCHUtxos(wallet.cashAddress));
-      const totalBalance = getBalanceFromUtxos(utxos);
-      const txFee = await calcFee(utxos);
-      let value = totalBalance - txFee >= 0 ? (totalBalance - txFee).toFixed(8) : 0;
+      const txFee = calcFee(slpBalancesAndUtxos.nonSlpUtxos);
+      let value =
+        balances.totalBalance - txFee >= 0 ? (balances.totalBalance - txFee).toFixed(8) : 0;
       setFormData({
         ...formData,
         value
@@ -97,15 +94,16 @@ const SendBCH = ({ onClose, outerAction }) => {
     } catch (err) {
       message.error("Unable to calculate the max value due to network errors");
     }
-    setLoading(false);
   };
 
-  const getBchHistory = async () => {
+  const getBchHistory = withSLP(async SLP => {
     setLoading(true);
     try {
-      const resp = await getTransactionHistory(wallet.cashAddresses.slice(0, 1), [
-        balances.bitcoinCashBalance[0].transactions
-      ]);
+      const details = await SLP.Address.details(wallet.cashAddresses);
+      const resp = await getTransactionHistory(
+        wallet.cashAddresses,
+        details.map(detail => detail.transactions)
+      );
       await fetch("https://markets.api.bitcoin.com/live/bitcoin")
         .then(response => {
           return response.json();
@@ -126,7 +124,7 @@ const SendBCH = ({ onClose, outerAction }) => {
     }
 
     setLoading(false);
-  };
+  });
 
   const handleChangeAction = () => {
     if (action === "send") {
@@ -181,7 +179,7 @@ const SendBCH = ({ onClose, outerAction }) => {
           >
             <br />
 
-            {!balances.balance && !balances.unconfirmedBalance && action === "send" ? (
+            {!balances.totalBalance && action === "send" ? (
               <Row justify="center" type="flex">
                 <Col>
                   <StyledButtonWrapper>
@@ -190,7 +188,7 @@ const SendBCH = ({ onClose, outerAction }) => {
                         You currently have 0 BCH. Deposit some funds to use this feature.
                       </Paragraph>
                       <Paragraph>
-                        <QRCode id="borderedQRCode" address={wallet.cashAddress} />
+                        <QRCode id="borderedQRCode" address={wallet.Path145.cashAddress} />
                       </Paragraph>
                     </>
                   </StyledButtonWrapper>
@@ -258,7 +256,11 @@ const SendBCH = ({ onClose, outerAction }) => {
                         width: "97%"
                       }}
                     >
-                      <a href={`https://explorer.bitcoin.com/bch/tx/${el.txid}`} target="_blank">
+                      <a
+                        href={`https://explorer.bitcoin.com/bch/tx/${el.txid}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
                         <p>{el.transactionBalance > 0 ? "Received" : "Sent"}</p>
                         <p>{el.date.toLocaleString()}</p>
 
@@ -284,8 +286,9 @@ const SendBCH = ({ onClose, outerAction }) => {
                     </div>
                   ))}
                   <a
-                    href={`https://explorer.bitcoin.com/bch/address/${wallet.cashAddress}`}
+                    href={`https://explorer.bitcoin.com/bch/address/${wallet.Path145.cashAddress}`}
                     target="_blank"
+                    rel="noopener noreferrer"
                   >
                     <p>Full History</p>
                   </a>

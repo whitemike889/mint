@@ -77,7 +77,7 @@ const Transfer = ({ token, onClose }) => {
   };
 
   const onMax = () => {
-    setFormData({ ...formData, quantity: token.balance });
+    setFormData({ ...formData, quantity: token.balance || 0 });
   };
 
   return (

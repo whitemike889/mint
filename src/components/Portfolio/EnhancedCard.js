@@ -51,7 +51,7 @@ const StyledEnhancedCard = styled(Card)`
   height: 150px;
 
   .ant-card-body {
-    height: calc(100% - 50px);
+    height: calc(100% - 46px);
   }
 
   .ant-card-actions {

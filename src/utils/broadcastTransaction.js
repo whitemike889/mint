@@ -10,27 +10,26 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
       (args.initialTokenQty && args.symbol && args.name && "IS_CREATING") ||
       (args.amount && args.tokenId && args.tokenReceiverAddress && "IS_SENDING");
 
-    const { Bip44 } = getWalletDetails(wallet);
-    const { cashAddress, slpAddress, fundingWif, fundingAddress } = Bip44;
+    const { Path245, Path145 } = getWalletDetails(wallet);
 
     const config = args;
-    config.bchChangeReceiverAddress = cashAddress;
-    config.fundingWif = fundingWif;
-    config.fundingAddress = fundingAddress;
+    config.bchChangeReceiverAddress = Path145.cashAddress;
+    config.fundingWif = [Path245.fundingWif, Path145.fundingWif];
+    config.fundingAddress = [Path245.fundingAddress, Path145.fundingAddress];
 
     let createTransaction;
 
     switch (TRANSACTION_TYPE) {
       case "IS_CREATING":
-        config.batonReceiverAddress = slpAddress;
+        config.batonReceiverAddress = Path245.slpAddress;
         config.decimals = config.decimals || 0;
         config.documentUri = config.docUri;
-        config.tokenReceiverAddress = slpAddress;
+        config.tokenReceiverAddress = Path245.slpAddress;
         createTransaction = async config => SLPInstance.TokenType1.create(config);
         break;
       case "IS_MINTING":
-        config.batonReceiverAddress = config.batonReceiverAddress || slpAddress;
-        config.tokenReceiverAddress = slpAddress;
+        config.batonReceiverAddress = config.batonReceiverAddress || Path245.slpAddress;
+        config.tokenReceiverAddress = Path245.slpAddress;
         createTransaction = async config => SLPInstance.TokenType1.mint(config);
         break;
       case "IS_SENDING":
