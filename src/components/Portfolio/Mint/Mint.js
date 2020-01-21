@@ -24,7 +24,7 @@ const StyledButtonWrapper = styled.div`
 
 const Mint = ({ token, onClose }) => {
   const ContextValue = React.useContext(WalletContext);
-  const { wallet, balances, slpBalancesAndUtxos } = ContextValue;
+  const { wallet, balances } = ContextValue;
   const [formData, setFormData] = useState({
     dirty: true,
     quantity: 0,
@@ -46,7 +46,7 @@ const Mint = ({ token, onClose }) => {
     const { quantity, baton } = formData;
 
     try {
-      const link = await mintToken(wallet, slpBalancesAndUtxos, {
+      const link = await mintToken(wallet, {
         tokenId: token.tokenId,
         additionalTokenQty: quantity,
         batonReceiverAddress: baton

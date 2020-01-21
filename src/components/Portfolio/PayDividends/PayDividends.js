@@ -34,7 +34,7 @@ const StyledStat = styled.div`
 
 const PayDividends = ({ SLP, token, onClose }) => {
   const ContextValue = React.useContext(WalletContext);
-  const { wallet, tokens, balances, utxos } = ContextValue;
+  const { wallet, tokens, balances, slpBalancesAndUtxos } = ContextValue;
   const [formData, setFormData] = useState({
     dirty: true,
     value: "",
@@ -57,7 +57,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
         setStats({
           ...stats,
           tokens: balancesForToken.totalBalance,
-          holders: balancesForToken.length ? balancesForToken.length - 1 : 0,
+          holders: balancesForToken.length ? balancesForToken.length : 0,
           balances: balancesForToken,
           txFee: 0
         });
@@ -94,7 +94,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
     setLoading(true);
     const { value } = formData;
     try {
-      const link = await sendDividends(wallet, utxos, {
+      const link = await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, {
         value,
         tokenId: token.tokenId
       });

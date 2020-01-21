@@ -1,7 +1,7 @@
 import getWalletDetails from "./getWalletDetails";
 import withSLP from "./withSLP";
 
-const broadcastTransaction = async (SLPInstance, wallet, slpBalancesAndUtxos, { ...args }) => {
+const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
   try {
     const NETWORK = process.env.REACT_APP_NETWORK;
 
