@@ -27,7 +27,7 @@ const App = () => {
     if (e.key < 4) setKey(e.key);
     setTimeout(() => mobile && setCollapesed(true), 100);
   };
-
+  console.log("render");
   const handleChangeAddress = e => {
     setAddress(address === "cashAddress" ? "slpAddress" : "cashAddress");
   };
