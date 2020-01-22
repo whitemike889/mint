@@ -1,10 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { notification } from "antd";
 import Big from "big.js";
 import { getWallet, createWallet } from "./createWallet";
+import useInterval from "./useInterval";
 import usePrevious from "./usePrevious";
 import withSLP from "./withSLP";
 import getSlpBanlancesAndUtxos from "./getSlpBanlancesAndUtxos";
@@ -80,19 +81,16 @@ export const useWallet = () => {
     });
   }
 
-  useEffect(() => {
-    const updateRoutine = () => {
+  useInterval(
+    () =>
       update({
         wallet: getWallet(),
         setWalletState
       }).finally(() => {
         setLoading(false);
-        setTimeout(updateRoutine, 5000);
-      });
-    };
-
-    updateRoutine();
-  }, []);
+      }),
+    5000
+  );
 
   return {
     wallet,
