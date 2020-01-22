@@ -16,7 +16,7 @@ import { QRCode } from "./Common/QRCode";
 const { Header, Content, Sider } = Layout;
 
 const App = () => {
-  const [collapsed, setCollapesed] = React.useState(window.innerWidth < 768);
+  const [collapsed, setCollapsed] = React.useState(window.innerWidth < 768);
   const [mobile, setMobile] = React.useState(false);
   const [key, setKey] = React.useState("0");
   const [address, setAddress] = React.useState("slpAddress");
@@ -25,9 +25,9 @@ const App = () => {
   const radio = React.useRef(null);
   const handleChange = e => {
     if (e.key < 4) setKey(e.key);
-    setTimeout(() => mobile && setCollapesed(true), 100);
+    setTimeout(() => mobile && setCollapsed(true), 100);
   };
-  console.log("render");
+
   const handleChangeAddress = e => {
     setAddress(address === "cashAddress" ? "slpAddress" : "cashAddress");
   };
@@ -64,7 +64,7 @@ const App = () => {
             breakpoint="lg"
             collapsedWidth="0"
             collapsed={collapsed}
-            onCollapse={() => setCollapesed(!collapsed)}
+            onCollapse={() => setCollapsed(!collapsed)}
             width="256"
             style={
               mobile
