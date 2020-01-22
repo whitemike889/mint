@@ -5,7 +5,7 @@ import Paragraph from "antd/lib/typography/Paragraph";
 import { notification } from "antd";
 import Big from "big.js";
 import { getWallet, createWallet } from "./createWallet";
-import useInterval from "./useInterval";
+import useAsyncTimeout from "./useAsyncTimeout";
 import usePrevious from "./usePrevious";
 import withSLP from "./withSLP";
 import getSlpBanlancesAndUtxos from "./getSlpBanlancesAndUtxos";
@@ -81,7 +81,7 @@ export const useWallet = () => {
     });
   }
 
-  useInterval(
+  useAsyncTimeout(
     () =>
       update({
         wallet: getWallet(),
