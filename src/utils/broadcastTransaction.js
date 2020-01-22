@@ -10,7 +10,7 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
       (args.initialTokenQty && args.symbol && args.name && "IS_CREATING") ||
       (args.amount && args.tokenId && args.tokenReceiverAddress && "IS_SENDING");
 
-    const { Path245, Path145 } = getWalletDetails(wallet);
+    const { Path245, Path145 } = wallet;
 
     const config = args;
     config.bchChangeReceiverAddress = Path145.cashAddress;
