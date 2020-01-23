@@ -5,20 +5,29 @@ const useAsyncTimeout = (callback, delay) => {
 
   useEffect(() => {
     savedCallback.current = callback;
-  }, [callback]);
+  });
 
   useEffect(() => {
-    let id;
+    let id = null;
     const tick = () => {
       const promise = savedCallback.current();
 
-      promise.then(() => {
+      if (promise instanceof Promise) {
+        promise.then(() => {
+          id = setTimeout(tick, delay);
+        });
+      } else {
         id = setTimeout(tick, delay);
-      });
+      }
     };
 
-    id = setTimeout(tick, delay);
-    return () => id && clearTimeout(id);
+    if (id !== null) {
+      id = setTimeout(tick, delay);
+      return () => clearTimeout(id);
+    } else {
+      tick();
+      return;
+    }
   }, [delay]);
 };
 

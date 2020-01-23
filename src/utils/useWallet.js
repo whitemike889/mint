@@ -81,16 +81,14 @@ export const useWallet = () => {
     });
   }
 
-  useAsyncTimeout(
-    () =>
-      update({
-        wallet: getWallet(),
-        setWalletState
-      }).finally(() => {
-        setLoading(false);
-      }),
-    5000
-  );
+  useAsyncTimeout(() => {
+    update({
+      wallet: getWallet(),
+      setWalletState
+    }).finally(() => {
+      setLoading(false);
+    });
+  }, 5000);
 
   return {
     wallet,
