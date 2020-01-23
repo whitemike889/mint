@@ -1,4 +1,3 @@
-import getWalletDetails from "./getWalletDetails";
 import withSLP from "./withSLP";
 
 const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
