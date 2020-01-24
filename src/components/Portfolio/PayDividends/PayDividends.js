@@ -43,11 +43,13 @@ export const StyledButtonWrapper = styled.div`
 
 const PayDividends = ({ SLP, token, onClose }) => {
   const ContextValue = React.useContext(WalletContext);
-  const { wallet, tokens, balances, slpBalancesAndUtxos } = ContextValue;
+  const { wallet, balances, slpBalancesAndUtxos } = ContextValue;
   const [formData, setFormData] = useState({
-    dirty: true,
-    value: "",
-    tokenId: token.tokenId
+    dirty: false,
+    amount: "",
+    tokenId: token.tokenId,
+    maxAmount: 0,
+    maxAmountChecked: false
   });
   const [advancedOptions, setAdvancedOptions] = useState({
     ignoreOwnAddress: true,
@@ -55,10 +57,14 @@ const PayDividends = ({ SLP, token, onClose }) => {
   });
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ tokens: 0, holders: 0, eligibles: 0, txFee: 0 });
+  const [showMaxAmountTooltip, setShowMaxAmountTooltip] = useState(false);
 
   const totalBalance = balances.totalBalance;
 
-  const submitEnabled = formData.tokenId && formData.value && Number(formData.value) > DUST;
+  const submitEnabled =
+    formData.tokenId &&
+    formData.amount > DUST &&
+    (!formData.maxAmount || formData.amount <= formData.maxAmount);
 
   useEffect(() => {
     setLoading(true);
@@ -75,15 +81,43 @@ const PayDividends = ({ SLP, token, onClose }) => {
       .finally(() => setLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (!stats.balances || !totalBalance || !slpBalancesAndUtxos) {
+      return;
+    }
+    try {
+      const { txFee } = getEligibleAddresses(
+        wallet,
+        stats.balances,
+        totalBalance,
+        slpBalancesAndUtxos.nonSlpUtxos,
+        advancedOptions
+      );
+      let { amount } = formData;
+      const maxAmount = (totalBalance - txFee).toFixed(8);
+      if (formData.maxAmountChecked && maxAmount !== formData.maxAmount) {
+        amount = maxAmount;
+        setShowMaxAmountTooltip(true);
+        setTimeout(() => setShowMaxAmountTooltip(false), 3000);
+      }
+
+      setFormData({
+        ...formData,
+        maxAmount,
+        amount
+      });
+    } catch (error) {}
+  }, [wallet, balances, stats.balances, slpBalancesAndUtxos, advancedOptions]);
+
   const calcEligiblesAndFee = useCallback(
-    debounce(async (value, advancedOptions) => {
-      if (stats.balances && !Number.isNaN(value) && value > 0) {
+    debounce((amount, advancedOptions) => {
+      if (stats.balances && !Number.isNaN(amount) && amount > 0) {
         setLoading(true);
         try {
-          const { addresses, txFee } = await getEligibleAddresses(
+          const { addresses, txFee } = getEligibleAddresses(
             wallet,
             stats.balances,
-            value,
+            amount,
             slpBalancesAndUtxos.nonSlpUtxos,
             advancedOptions
           );
@@ -102,7 +136,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
   async function submit() {
     setFormData({
       ...formData,
-      dirty: false
+      dirty: true
     });
 
     if (!submitEnabled) {
@@ -110,10 +144,10 @@ const PayDividends = ({ SLP, token, onClose }) => {
     }
 
     setLoading(true);
-    const { value } = formData;
+    const { amount } = formData;
     try {
       const link = await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, advancedOptions, {
-        value,
+        value: amount,
         tokenId: token.tokenId
       });
 
@@ -170,40 +204,38 @@ const PayDividends = ({ SLP, token, onClose }) => {
 
   const handleChange = e => {
     const { value, name } = e.target;
-    setFormData(p => ({ ...p, [name]: value }));
+    setFormData(p => ({ ...p, dirty: true, maxAmountChecked: false, [name]: value }));
 
-    if (name === "value") {
+    if (name === "amount") {
       calcEligiblesAndFee(value, advancedOptions);
     }
   };
 
-  const onMaxDividend = async () => {
+  const onMaxAmount = useCallback(async () => {
     setLoading(true);
 
     try {
-      const { txFee } = await getEligibleAddresses(
-        wallet,
-        stats.balances,
-        totalBalance,
-        slpBalancesAndUtxos.nonSlpUtxos,
-        advancedOptions
-      );
-      let value = totalBalance - txFee >= 0 ? (totalBalance - txFee).toFixed(8) : 0;
+      let amount = formData.maxAmount >= 0 ? formData.maxAmount : 0;
       setFormData({
         ...formData,
-        value
+        maxAmountChecked: true,
+        amount
       });
-      await calcEligiblesAndFee(value, advancedOptions);
+      await calcEligiblesAndFee(amount, advancedOptions);
     } catch (err) {
-      message.error("Unable to calculate the max value due to network errors");
+      message.error("Unable to calculate the max amount due to network errors");
     }
 
     setLoading(false);
-  };
+  }, [formData, advancedOptions]);
 
   const setAdvancedOptionsAndCalcEligibles = options => {
+    setFormData({
+      ...formData,
+      dirty: true
+    });
     setAdvancedOptions(options);
-    calcEligiblesAndFee(formData.value, options);
+    calcEligiblesAndFee(formData.amount, options);
   };
 
   return (
@@ -270,7 +302,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
                     </Col>
                     &nbsp; &nbsp; &nbsp;
                     <Col>
-                      <Tooltip title="Addresses eligible to receive dividends for the specified value">
+                      <Tooltip title="Addresses eligible to receive dividends for the specified amount">
                         <StyledStat>
                           <Icon type="usergroup-add" />
                           &nbsp;
@@ -287,26 +319,34 @@ const PayDividends = ({ SLP, token, onClose }) => {
                   <Row type="flex">
                     <Col span={24}>
                       <Form style={{ width: "auto", marginBottom: "1em" }} noValidate>
-                        <FormItemWithMaxAddon
-                          style={{ margin: 0 }}
-                          validateStatus={
-                            !formData.dirty && Number(formData.value) <= 0 ? "error" : ""
-                          }
-                          help={
-                            !formData.dirty && Number(formData.value) < DUST
-                              ? `Must be greater than ${DUST} BCH`
-                              : ""
-                          }
-                          onMax={onMaxDividend}
-                          inputProps={{
-                            suffix: "BCH",
-                            name: "value",
-                            placeholder: "value",
-                            onChange: e => handleChange(e),
-                            required: true,
-                            value: formData.value
-                          }}
-                        />
+                        <Tooltip
+                          placement="topRight"
+                          visible={showMaxAmountTooltip}
+                          title={`Max amount changed to ${formData.maxAmount}!`}
+                        >
+                          <FormItemWithMaxAddon
+                            style={{ margin: 0 }}
+                            validateStatus={formData.dirty && !submitEnabled ? "error" : ""}
+                            help={
+                              formData.dirty && !submitEnabled
+                                ? `Must be greater than ${DUST} BCH ${
+                                    formData.maxAmount > 0
+                                      ? `and lower or equal to ${formData.maxAmount}`
+                                      : ""
+                                  }`
+                                : ""
+                            }
+                            onMax={onMaxAmount}
+                            inputProps={{
+                              suffix: "BCH",
+                              name: "amount",
+                              placeholder: "Amount",
+                              onChange: e => handleChange(e),
+                              required: true,
+                              value: formData.amount
+                            }}
+                          />
+                        </Tooltip>
                       </Form>
                     </Col>
                     <Col span={24}>

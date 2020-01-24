@@ -16,7 +16,7 @@ export const getBalancesForToken = withSLP(async (SLP, tokenId) => {
 });
 
 export const getEligibleAddresses = withSLP(
-  async (SLP, wallet, balances, value, utxos, advancedOptions) => {
+  (SLP, wallet, balances, value, utxos, advancedOptions) => {
     const addresses = [];
     const values = [];
 
@@ -69,7 +69,7 @@ export const getEligibleAddresses = withSLP(
 export const sendDividends = async (wallet, utxos, advancedOptions, { value, tokenId }) => {
   const outputs = await getBalancesForToken(tokenId);
 
-  const { addresses, values } = await getEligibleAddresses(
+  const { addresses, values } = getEligibleAddresses(
     wallet,
     outputs,
     value,
