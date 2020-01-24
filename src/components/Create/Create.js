@@ -1,7 +1,19 @@
 import React from "react";
 import { withRouter } from "react-router-dom";
 import { WalletContext } from "../../utils/context";
-import { Input, Button, notification, Spin, Icon, Row, Col, Card, Form, Typography } from "antd";
+import {
+  Input,
+  Button,
+  notification,
+  Spin,
+  Icon,
+  Row,
+  Col,
+  Card,
+  Form,
+  Typography,
+  Collapse
+} from "antd";
 import createToken from "../../utils/broadcastTransaction";
 import StyledCreate from "../Common/StyledPage";
 import { QRCode } from "../Common/QRCode";
@@ -118,7 +130,20 @@ const Create = ({ history }) => {
                     <Paragraph>You currently have 0 BCH.</Paragraph>
                     <Paragraph>
                       Deposit some BCH in order to pay for the transaction that will generate the
-                      token
+                      token.
+                    </Paragraph>
+                    <Paragraph>
+                      Get free BCH from the{" "}
+                      <strong>
+                        <a
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          href="https://free.bitcoin.com/"
+                        >
+                          Bitcoin.com Faucet
+                        </a>
+                      </strong>
+                      !
                     </Paragraph>
                   </>
                 ) : null}
@@ -210,6 +235,27 @@ const Create = ({ history }) => {
                     type="number"
                   />
                 </Form.Item>
+                <Collapse accordion>
+                  <Collapse.Panel
+                    header={<>How can I add an icon?</>}
+                    key="1"
+                    style={{ textAlign: "left" }}
+                  >
+                    <Paragraph>
+                      After creating your token, follow{" "}
+                      <strong>
+                        <a
+                          href="https://github.com/kosinusbch/slp-token-icons#adding-your-icon"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          these instructions
+                        </a>
+                      </strong>{" "}
+                      to add your own token icon.
+                    </Paragraph>
+                  </Collapse.Panel>
+                </Collapse>
                 <div style={{ paddingTop: "12px" }}>
                   <Button onClick={() => handleCreateToken()}>Create Token</Button>
                 </div>
