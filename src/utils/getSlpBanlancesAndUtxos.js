@@ -11,7 +11,11 @@ const getSLPTxType = scriptASMArray => {
     throw new Error("Not a SLP OP_RETURN");
   }
 
-  if (scriptASMArray[2] !== "OP_1") {
+  if (
+    scriptASMArray[2] !== "OP_1" &&
+    scriptASMArray[2] !== "OP_1NEGATE" &&
+    scriptASMArray[2] !== "41"
+  ) {
     // NOTE: bitcoincashlib-js converts hex 01 to OP_1 due to BIP62.3 enforcement
     throw new Error("Unknown token type");
   }

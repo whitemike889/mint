@@ -11,7 +11,7 @@ import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs
 import getTransactionHistory from "../../../utils/getTransactionHistory";
 import withSLP from "../../../utils/withSLP";
 
-const StyledButtonWrapper = styled.div`
+export const StyledButtonWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
