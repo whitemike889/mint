@@ -1,6 +1,3 @@
-/* eslint-disable no-loop-func */
-
-import { Utils } from "slpjs";
 import Big from "big.js";
 import withSLP from "./withSLP";
 import { sendBch, SATOSHIS_PER_BYTE } from "./sendBch";
@@ -18,56 +15,67 @@ export const getBalancesForToken = withSLP(async (SLP, tokenId) => {
   }
 });
 
-export const getEligibleAddresses = withSLP(async (SLP, wallet, balances, value) => {
-  let addresses = [];
-  let values = [];
+export const getEligibleAddresses = withSLP(
+  (SLP, wallet, balances, value, utxos, advancedOptions) => {
+    const addresses = [];
+    const values = [];
 
-  let eligibleBalances = [
-    ...balances.filter(
-      balance =>
-        balance.slpAddress !== wallet.Path245.slpAddress &&
-        balance.slpAddress !== wallet.Path145.slpAddress
-    )
-  ];
+    const slpAddressesToExclude = advancedOptions.addressesToExclude
+      .filter(addressToExclude => addressToExclude.valid)
+      .map(addressToExclude => SLP.Address.toSLPAddress(addressToExclude.address));
 
-  while (true) {
-    const tokenBalanceSum = eligibleBalances.reduce((p, c) => c.tokenBalance + p, 0);
+    if (advancedOptions.ignoreOwnAddress) {
+      slpAddressesToExclude.push(...wallet.slpAddresses);
+    }
 
-    const newEligibleBalances = eligibleBalances.filter(eligibleBalance => {
-      const eligibleValue = new Big(eligibleBalance.tokenBalance).div(tokenBalanceSum).mul(value);
+    const eligibleBalances = balances
+      .filter(balance => !slpAddressesToExclude.includes(balance.slpAddress))
+      .map(eligibleBalance => ({
+        ...eligibleBalance,
+        tokenBalance: new Big(eligibleBalance.tokenBalanceString)
+      }));
+    const tokenBalanceSum = eligibleBalances.reduce((p, c) => p.plus(c.tokenBalance), new Big(0));
+    const minTokenBalance = tokenBalanceSum.mul(DUST).div(value);
 
-      if (eligibleValue.gte(DUST)) {
-        addresses.push(Utils.toCashAddress(eligibleBalance.slpAddress));
-        values.push(eligibleValue);
-        return true;
-      }
-      return false;
+    const filteredEligibleBalances = eligibleBalances.filter(eligibleBalance =>
+      minTokenBalance.lte(eligibleBalance.tokenBalance)
+    );
+    const filteredTokenBalanceSum = filteredEligibleBalances.reduce(
+      (p, c) => p.plus(c.tokenBalance),
+      new Big(0)
+    );
+    filteredEligibleBalances.forEach(async eligibleBalance => {
+      const eligibleValue = eligibleBalance.tokenBalance.div(filteredTokenBalanceSum).mul(value);
+      values.push(eligibleValue);
+      addresses.push(eligibleBalance.slpAddress);
     });
 
-    if (newEligibleBalances.length === eligibleBalances.length) {
-      break;
-    } else {
-      eligibleBalances = newEligibleBalances;
-      addresses = [];
-      values = [];
-    }
-    await new Promise(resolve => setTimeout(resolve, 10));
+    const byteCount = SLP.BitcoinCash.getByteCount(
+      { P2PKH: utxos.length },
+      { P2PKH: addresses.length + 1 }
+    );
+    const txFee = SLP.BitcoinCash.toBitcoinCash(Math.floor(SATOSHIS_PER_BYTE * byteCount)).toFixed(
+      8
+    );
+
+    return {
+      addresses,
+      values,
+      txFee
+    };
   }
+);
 
-  const byteCount = SLP.BitcoinCash.getByteCount({ P2PKH: 1 }, { P2PKH: addresses.length + 1 });
-  const txFee = SLP.BitcoinCash.toBitcoinCash(Math.floor(SATOSHIS_PER_BYTE * byteCount)).toFixed(8);
-
-  return {
-    addresses,
-    values,
-    txFee
-  };
-});
-
-export const sendDividends = async (wallet, utxos, { value, tokenId }) => {
+export const sendDividends = async (wallet, utxos, advancedOptions, { value, tokenId }) => {
   const outputs = await getBalancesForToken(tokenId);
 
-  const { addresses, values } = await getEligibleAddresses(wallet, outputs, value);
+  const { addresses, values } = getEligibleAddresses(
+    wallet,
+    outputs,
+    value,
+    utxos,
+    advancedOptions
+  );
 
   return await sendBch(wallet, utxos, { addresses, values });
 };

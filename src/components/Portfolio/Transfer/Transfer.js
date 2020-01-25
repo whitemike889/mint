@@ -11,7 +11,7 @@ import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs
 const Transfer = ({ token, onClose }) => {
   const { wallet } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
-    dirty: true,
+    dirty: false,
     quantity: "",
     address: ""
   });
@@ -97,9 +97,9 @@ const Transfer = ({ token, onClose }) => {
               <Col span={24}>
                 <Form style={{ width: "auto" }}>
                   <FormItemWithQRCodeAddon
-                    validateStatus={!formData.dirty && !formData.address ? "error" : ""}
+                    validateStatus={formData.dirty && !formData.address ? "error" : ""}
                     help={
-                      !formData.dirty && !formData.address ? "Should be a valid slp address" : ""
+                      formData.dirty && !formData.address ? "Should be a valid slp address" : ""
                     }
                     onScan={result => setFormData({ ...formData, address: result })}
                     inputProps={{
@@ -112,11 +112,9 @@ const Transfer = ({ token, onClose }) => {
                   />
 
                   <FormItemWithMaxAddon
-                    validateStatus={
-                      !formData.dirty && Number(formData.quantity) <= 0 ? "error" : ""
-                    }
+                    validateStatus={formData.dirty && Number(formData.quantity) <= 0 ? "error" : ""}
                     help={
-                      !formData.dirty && Number(formData.quantity) <= 0
+                      formData.dirty && Number(formData.quantity) <= 0
                         ? "Should be greater than 0"
                         : ""
                     }

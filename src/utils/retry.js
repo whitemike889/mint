@@ -8,3 +8,5 @@ export const retry = async (func, { delay = 100, tries = 3 } = {}) => {
     return await retry(func, { delay: delay * 2, tries: tries - 1 });
   }
 };
+
+export default retry;
