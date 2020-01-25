@@ -1,4 +1,5 @@
 import withSLP from "./withSLP";
+import getTokenTransactionHistoryFromApi from "./getTokenTransactionHistoryFromApi";
 
 const getTokenTransactionHistory = async (SLP, slpAddresses, tokenId) => {
   try {
@@ -26,6 +27,8 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenId) => {
         f: "[.[] | { txid: .tx.h, tokenDetails: .slp, blk: .blk } ]"
       }
     };
+
+    await getTokenTransactionHistoryFromApi(slpAddresses, tokenId);
 
     const calculateTransactionBalance = outputs => {
       if (outputs.length === 1 && slpAddresses.includes(outputs[0].address))
