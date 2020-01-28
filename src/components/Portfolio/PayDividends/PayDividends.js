@@ -3,18 +3,20 @@
 import React, { useState, useEffect, useCallback } from "react";
 import styled from "styled-components";
 import { WalletContext } from "../../../utils/context";
+import retry from "../../../utils/retry";
 import {
   sendDividends,
   getBalancesForToken,
   DUST,
   getEligibleAddresses
 } from "../../../utils/sendDividends";
-import { Card, Icon, Form, Button, Alert, Spin, notification, Badge, Tooltip, message } from "antd";
+import { Card, Icon, Form, Button, Spin, notification, Badge, Tooltip, message } from "antd";
 import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
-import isPiticoTokenHolder from "../../../utils/isPiticoTokenHolder";
 import debounce from "../../../utils/debounce";
 import { FormItemWithMaxAddon } from "../EnhancedInputs";
+import { AdvancedOptions } from "./AdvancedOptions";
+import { QRCode } from "../../Common/QRCode";
 
 const StyledPayDividends = styled.div`
   * {
@@ -32,27 +34,41 @@ const StyledStat = styled.div`
   }
 `;
 
+export const StyledButtonWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+`;
+
 const PayDividends = ({ SLP, token, onClose }) => {
   const ContextValue = React.useContext(WalletContext);
-  const { wallet, tokens, balances, slpBalancesAndUtxos } = ContextValue;
+  const { wallet, balances, slpBalancesAndUtxos } = ContextValue;
   const [formData, setFormData] = useState({
-    dirty: true,
-    value: "",
-    tokenId: token.tokenId
+    dirty: false,
+    amount: "",
+    tokenId: token.tokenId,
+    maxAmount: 0,
+    maxAmountChecked: false
+  });
+  const [advancedOptions, setAdvancedOptions] = useState({
+    ignoreOwnAddress: true,
+    addressesToExclude: [{ address: "", valid: null }]
   });
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ tokens: 0, holders: 0, eligibles: 0, txFee: 0 });
+  const [showMaxAmountTooltip, setShowMaxAmountTooltip] = useState(false);
 
   const totalBalance = balances.totalBalance;
 
   const submitEnabled =
     formData.tokenId &&
-    formData.value &&
-    Number(formData.value) > DUST &&
-    (totalBalance - Number(formData.value) - Number(stats.txFee)).toFixed(8) >= 0;
+    formData.amount > DUST &&
+    (!formData.maxAmount || formData.amount <= formData.maxAmount);
+
   useEffect(() => {
     setLoading(true);
-    getBalancesForToken(token.tokenId)
+    retry(() => getBalancesForToken(token.tokenId))
       .then(balancesForToken => {
         setStats({
           ...stats,
@@ -65,15 +81,51 @@ const PayDividends = ({ SLP, token, onClose }) => {
       .finally(() => setLoading(false));
   }, []);
 
-  const calcEligibles = useCallback(
-    debounce(value => {
-      if (stats.balances && value && !Number.isNaN(value)) {
+  useEffect(() => {
+    if (!stats.balances || !totalBalance || !slpBalancesAndUtxos) {
+      return;
+    }
+    try {
+      const { txFee } = getEligibleAddresses(
+        wallet,
+        stats.balances,
+        totalBalance,
+        slpBalancesAndUtxos.nonSlpUtxos,
+        advancedOptions
+      );
+      let { amount } = formData;
+      const maxAmount = (totalBalance - txFee).toFixed(8);
+      if (formData.maxAmountChecked && maxAmount !== formData.maxAmount) {
+        amount = maxAmount;
+        setShowMaxAmountTooltip(true);
+        setTimeout(() => setShowMaxAmountTooltip(false), 3000);
+      }
+
+      setFormData({
+        ...formData,
+        maxAmount,
+        amount
+      });
+    } catch (error) {}
+  }, [wallet, balances, stats.balances, slpBalancesAndUtxos, advancedOptions]);
+
+  const calcEligiblesAndFee = useCallback(
+    debounce((amount, advancedOptions) => {
+      if (stats.balances && !Number.isNaN(amount) && amount > 0) {
         setLoading(true);
-        getEligibleAddresses(wallet, stats.balances, value)
-          .then(({ addresses, txFee }) => {
-            setStats({ ...stats, eligibles: addresses.length, txFee });
-          })
-          .finally(() => setLoading(false));
+        try {
+          const { addresses, txFee } = getEligibleAddresses(
+            wallet,
+            stats.balances,
+            amount,
+            slpBalancesAndUtxos.nonSlpUtxos,
+            advancedOptions
+          );
+          setStats({ ...stats, eligibles: addresses.length, txFee });
+        } catch (error) {
+          message.error("Unable to calculate eligible addresses due to network errors");
+        }
+        setLoading(false);
       } else {
         setStats({ ...stats, eligibles: 0, txFee: 0 });
       }
@@ -84,7 +136,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
   async function submit() {
     setFormData({
       ...formData,
-      dirty: false
+      dirty: true
     });
 
     if (!submitEnabled) {
@@ -92,10 +144,10 @@ const PayDividends = ({ SLP, token, onClose }) => {
     }
 
     setLoading(true);
-    const { value } = formData;
+    const { amount } = formData;
     try {
-      const link = await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, {
-        value,
+      const link = await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, advancedOptions, {
+        value: amount,
         tokenId: token.tokenId
       });
 
@@ -152,29 +204,38 @@ const PayDividends = ({ SLP, token, onClose }) => {
 
   const handleChange = e => {
     const { value, name } = e.target;
-    setFormData(p => ({ ...p, [name]: value }));
+    setFormData(p => ({ ...p, dirty: true, maxAmountChecked: false, [name]: value }));
 
-    if (name === "value") {
-      calcEligibles(value);
+    if (name === "amount") {
+      calcEligiblesAndFee(value, advancedOptions);
     }
   };
 
-  const onMaxDividend = async () => {
+  const onMaxAmount = useCallback(async () => {
     setLoading(true);
 
     try {
-      const { txFee } = await getEligibleAddresses(wallet, stats.balances, totalBalance);
-      let value = totalBalance - txFee >= 0 ? (totalBalance - txFee).toFixed(8) : 0;
+      let amount = formData.maxAmount >= 0 ? formData.maxAmount : 0;
       setFormData({
         ...formData,
-        value
+        maxAmountChecked: true,
+        amount
       });
-      await calcEligibles(value);
+      await calcEligiblesAndFee(amount, advancedOptions);
     } catch (err) {
-      message.error("Unable to calculate the max value due to network errors");
+      message.error("Unable to calculate the max amount due to network errors");
     }
 
     setLoading(false);
+  }, [formData, advancedOptions]);
+
+  const setAdvancedOptionsAndCalcEligibles = options => {
+    setFormData({
+      ...formData,
+      dirty: true
+    });
+    setAdvancedOptions(options);
+    calcEligiblesAndFee(formData.amount, options);
   };
 
   return (
@@ -190,31 +251,25 @@ const PayDividends = ({ SLP, token, onClose }) => {
               }
               bordered={false}
             >
-              {!isPiticoTokenHolder(tokens) ? (
-                <Alert
-                  message={
-                    <span>
-                      <Paragraph>
-                        <Icon type="warning" /> EXPERIMENTAL
-                      </Paragraph>
-                      <Paragraph>
-                        This is an experimental feature, available only to Pitico Cash token
-                        holders.
-                      </Paragraph>
-                      <Paragraph>
-                        <a href="https://t.me/piticocash" target="_blank" rel="noopener noreferrer">
-                          Join our Telegram Group to get your $PTCH.
-                        </a>
-                      </Paragraph>
-                    </span>
-                  }
-                  type="warning"
-                  closable={false}
-                />
-              ) : null}
-              <br />
-              {isPiticoTokenHolder(tokens) ? (
+              {!balances.totalBalance ? (
+                <Row justify="center" type="flex">
+                  <Col>
+                    <br />
+                    <StyledButtonWrapper>
+                      <>
+                        <Paragraph>
+                          You currently have 0 BCH. Deposit some funds to use this feature.
+                        </Paragraph>
+                        <Paragraph>
+                          <QRCode id="borderedQRCode" address={wallet.Path145.cashAddress} />
+                        </Paragraph>
+                      </>
+                    </StyledButtonWrapper>
+                  </Col>
+                </Row>
+              ) : (
                 <>
+                  <br />
                   <Row type="flex">
                     <Col>
                       <Tooltip title="Circulating Supply">
@@ -247,7 +302,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
                     </Col>
                     &nbsp; &nbsp; &nbsp;
                     <Col>
-                      <Tooltip title="Addresses eligible to receive dividends for the specified value">
+                      <Tooltip title="Addresses eligible to receive dividends for the specified amount">
                         <StyledStat>
                           <Icon type="usergroup-add" />
                           &nbsp;
@@ -264,67 +319,52 @@ const PayDividends = ({ SLP, token, onClose }) => {
                   <Row type="flex">
                     <Col span={24}>
                       <Form style={{ width: "auto", marginBottom: "1em" }} noValidate>
-                        <FormItemWithMaxAddon
-                          style={{ margin: 0 }}
-                          validateStatus={
-                            !formData.dirty && Number(formData.value) <= 0 ? "error" : ""
-                          }
-                          help={
-                            !formData.dirty && Number(formData.value) < DUST
-                              ? "Must be greater than 0"
-                              : ""
-                          }
-                          onMax={onMaxDividend}
-                          inputProps={{
-                            suffix: "BCH",
-                            name: "value",
-                            placeholder: "value",
-                            onChange: e => handleChange(e),
-                            required: true,
-                            value: formData.value
-                          }}
-                        />
+                        <Tooltip
+                          placement="topRight"
+                          visible={showMaxAmountTooltip}
+                          title={`Max amount changed to ${formData.maxAmount}!`}
+                        >
+                          <FormItemWithMaxAddon
+                            style={{ margin: 0 }}
+                            validateStatus={formData.dirty && !submitEnabled ? "error" : ""}
+                            help={
+                              formData.dirty && !submitEnabled
+                                ? `Must be greater than ${DUST} BCH ${
+                                    formData.maxAmount > 0
+                                      ? `and lower or equal to ${formData.maxAmount}`
+                                      : ""
+                                  }`
+                                : ""
+                            }
+                            onMax={onMaxAmount}
+                            inputProps={{
+                              suffix: "BCH",
+                              name: "amount",
+                              placeholder: "Amount",
+                              onChange: e => handleChange(e),
+                              required: true,
+                              value: formData.amount
+                            }}
+                          />
+                        </Tooltip>
                       </Form>
                     </Col>
-                    <Col>
-                      <Tooltip title="Bitcoincash balance">
-                        <StyledStat>
-                          <Icon type="dollar" />
-                          &nbsp;
-                          <Badge
-                            count={totalBalance.toFixed(8) || "0"}
-                            overflowCount={Number.MAX_VALUE}
-                            showZero
-                          />
-                          <Paragraph>Balance</Paragraph>
-                        </StyledStat>
-                      </Tooltip>
-                    </Col>
-                    &nbsp; &nbsp; &nbsp;
-                    <Col>
-                      <Tooltip title="Transaction fee">
-                        <StyledStat>
-                          <Icon type="minus-circle" />
-                          &nbsp;
-                          <Badge
-                            count={stats.txFee || "0"}
-                            overflowCount={Number.MAX_VALUE}
-                            showZero
-                          />
-                          <Paragraph>Fee</Paragraph>
-                        </StyledStat>
-                      </Tooltip>
-                    </Col>
-                    <br />
-                    <br />
                     <Col span={24}>
-                      <Button disabled={!submitEnabled} onClick={() => submit()}>
-                        Pay Dividends
-                      </Button>
+                      <AdvancedOptions
+                        advancedOptions={advancedOptions}
+                        setAdvancedOptions={setAdvancedOptionsAndCalcEligibles}
+                      />
+                    </Col>
+                    <Col span={24}>
+                      <div style={{ paddingTop: "12px" }}>
+                        <Button disabled={!submitEnabled} onClick={() => submit()}>
+                          Pay Dividends
+                        </Button>
+                      </div>
                     </Col>
                   </Row>
                 </>
-              ) : null}
+              )}
             </Card>
           </Spin>
         </Col>

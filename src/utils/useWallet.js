@@ -1,10 +1,11 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { notification } from "antd";
 import Big from "big.js";
 import { getWallet, createWallet } from "./createWallet";
+import useAsyncTimeout from "./useAsyncTimeout";
 import usePrevious from "./usePrevious";
 import withSLP from "./withSLP";
 import getSlpBanlancesAndUtxos from "./getSlpBanlancesAndUtxos";
@@ -29,27 +30,36 @@ const normalizeBalance = (SLP, slpBalancesAndUtxos) => {
   };
 };
 
-const update = withSLP(async (SLP, { wallet, setBalances, setTokens, setSlpBalancesAndUtxos }) => {
+const update = withSLP(async (SLP, { wallet, setWalletState }) => {
   try {
     if (!wallet) {
       return;
     }
     const slpBalancesAndUtxos = await getSlpBanlancesAndUtxos(wallet.cashAddresses);
     const { tokens } = slpBalancesAndUtxos;
+    const newState = {
+      balances: {},
+      tokens: [],
+      slpBalancesAndUtxos: []
+    };
 
-    setSlpBalancesAndUtxos(normalizeSlpBalancesAndUtxos(SLP, slpBalancesAndUtxos, wallet));
-    setBalances(normalizeBalance(SLP, slpBalancesAndUtxos));
-    setTokens(tokens);
+    newState.slpBalancesAndUtxos = normalizeSlpBalancesAndUtxos(SLP, slpBalancesAndUtxos, wallet);
+    newState.balances = normalizeBalance(SLP, slpBalancesAndUtxos);
+    newState.tokens = tokens;
+
+    setWalletState(newState);
   } catch (error) {}
 });
 
 export const useWallet = () => {
   const [wallet, setWallet] = useState(getWallet());
-  const [balances, setBalances] = useState({});
-  const [tokens, setTokens] = useState([]);
-  const [slpBalancesAndUtxos, setSlpBalancesAndUtxos] = useState([]);
+  const [walletState, setWalletState] = useState({
+    balances: {},
+    tokens: [],
+    slpBalancesAndUtxos: []
+  });
   const [loading, setLoading] = useState(true);
-
+  const { balances, tokens, slpBalancesAndUtxos } = walletState;
   const previousBalances = usePrevious(balances);
 
   if (
@@ -71,21 +81,14 @@ export const useWallet = () => {
     });
   }
 
-  useEffect(() => {
-    const updateRoutine = () => {
-      update({
-        wallet: getWallet(),
-        setBalances,
-        setTokens,
-        setSlpBalancesAndUtxos
-      }).finally(() => {
-        setLoading(false);
-        setTimeout(updateRoutine, 5000);
-      });
-    };
-
-    updateRoutine();
-  }, []);
+  useAsyncTimeout(() => {
+    update({
+      wallet: getWallet(),
+      setWalletState
+    }).finally(() => {
+      setLoading(false);
+    });
+  }, 5000);
 
   return {
     wallet,
@@ -96,10 +99,9 @@ export const useWallet = () => {
     update: () =>
       update({
         wallet: getWallet(),
-        setBalances,
-        setTokens,
+
         setLoading,
-        setSlpBalancesAndUtxos
+        setWalletState
       }),
     createWallet: importMnemonic => {
       setLoading(true);
@@ -107,9 +109,7 @@ export const useWallet = () => {
       setWallet(newWallet);
       update({
         wallet: newWallet,
-        setBalances,
-        setTokens,
-        setSlpBalancesAndUtxos
+        setWalletState
       }).finally(() => setLoading(false));
     }
   };

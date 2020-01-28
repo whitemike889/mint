@@ -145,6 +145,15 @@ input.ant-input {
   opacity: 1;
 }
 
+.ant-checkbox-inner {
+  border: 1px solid #eaedf3 !important;
+  background: white;
+}
+
+.ant-checkbox-inner::after {
+  border-color: white !important;
+}
+
 .ant-card-bordered {
   border: 1px solid rgb(234, 237, 243);
   border-radius: 8px;
