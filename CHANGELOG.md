@@ -2,7 +2,7 @@
 
 ## Jan 28, 2020
 
-- [#43:](https://github.com/Bitcoin-com/mint/pull/43): Production release
+- [#43:](https://github.com/Bitcoin-com/mint/pull/43) Production release
 - [#42:](https://github.com/Bitcoin-com/mint/pull/42) [fix] Get wallet from localstorage should have a getWalletDetails call
 - [#41:](https://github.com/Bitcoin-com/mint/pull/41) [feat] Addresses removal for paying dividends
 - [#40:](https://github.com/Bitcoin-com/mint/pull/40) [feat] Add Faucet Link and instructions for adding token icons
