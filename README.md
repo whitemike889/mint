@@ -4,8 +4,6 @@
 
 _Mint is client-only: the app runs in your web browser. Mint uses rest.bitcoin.com as the default back-end, but the user may select any backend. Mint is non-custodial and does not have access to your private keys. You must back up your wallet to recover your funds._
 
-**We're pleased to announce that pitico is now a award-winning project! We won 3rd place in the Simple Ledger Virtual Hackathon (SLPVH) 2019: https://simpleledger.info/slpvh/**
-
 ### Features
 
 - Create your own SLP token
