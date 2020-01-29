@@ -4,6 +4,12 @@ import { sendBch, SATOSHIS_PER_BYTE } from "./sendBch";
 
 export const DUST = 0.00005;
 
+export const getEncodedOpReturnMessage = withSLP((SLP, opReturnMessage = "") => {
+  const fullOpReturnMessage = `MintDividend${opReturnMessage ? `: ${opReturnMessage}` : ""}`;
+  const buf = Buffer.from(fullOpReturnMessage, "ascii");
+  return SLP.Script.encodeNullDataOutput(buf);
+});
+
 export const getBalancesForToken = withSLP(async (SLP, tokenId) => {
   try {
     const balances = await SLP.Utils.balancesForToken(tokenId);
@@ -16,7 +22,7 @@ export const getBalancesForToken = withSLP(async (SLP, tokenId) => {
 });
 
 export const getEligibleAddresses = withSLP(
-  (SLP, wallet, balances, value, utxos, advancedOptions) => {
+  (SLP, wallet, balancesForToken, value, utxos, advancedOptions) => {
     const addresses = [];
     const values = [];
 
@@ -28,7 +34,7 @@ export const getEligibleAddresses = withSLP(
       slpAddressesToExclude.push(...wallet.slpAddresses);
     }
 
-    const eligibleBalances = balances
+    const eligibleBalances = balancesForToken
       .filter(balance => !slpAddressesToExclude.includes(balance.slpAddress))
       .map(eligibleBalance => ({
         ...eligibleBalance,
@@ -54,14 +60,17 @@ export const getEligibleAddresses = withSLP(
       { P2PKH: utxos.length },
       { P2PKH: addresses.length + 1 }
     );
-    const txFee = SLP.BitcoinCash.toBitcoinCash(Math.floor(SATOSHIS_PER_BYTE * byteCount)).toFixed(
-      8
+
+    const encodedOpReturn = getEncodedOpReturnMessage(advancedOptions.opReturnMessage);
+    const txFee = SLP.BitcoinCash.toBitcoinCash(
+      Math.floor(SATOSHIS_PER_BYTE * (byteCount + encodedOpReturn.length)).toFixed(8)
     );
 
     return {
       addresses,
       values,
-      txFee
+      txFee,
+      encodedOpReturn
     };
   }
 );
@@ -69,7 +78,7 @@ export const getEligibleAddresses = withSLP(
 export const sendDividends = async (wallet, utxos, advancedOptions, { value, tokenId }) => {
   const outputs = await getBalancesForToken(tokenId);
 
-  const { addresses, values } = getEligibleAddresses(
+  const { addresses, values, encodedOpReturn } = getEligibleAddresses(
     wallet,
     outputs,
     value,
@@ -77,5 +86,9 @@ export const sendDividends = async (wallet, utxos, advancedOptions, { value, tok
     advancedOptions
   );
 
-  return await sendBch(wallet, utxos, { addresses, values });
+  return await sendBch(wallet, utxos, {
+    addresses,
+    values,
+    encodedOpReturn
+  });
 };

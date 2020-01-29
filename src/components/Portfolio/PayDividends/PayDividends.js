@@ -1,26 +1,30 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { WalletContext } from "../../../utils/context";
-import retry from "../../../utils/retry";
-import {
-  sendDividends,
-  getBalancesForToken,
-  DUST,
-  getEligibleAddresses
-} from "../../../utils/sendDividends";
-import { Card, Icon, Form, Button, Spin, notification, Badge, Tooltip, message } from "antd";
+import { sendDividends, DUST } from "../../../utils/sendDividends";
+import { Card, Icon, Form, Button, Spin, notification, Badge, Tooltip, message, Alert } from "antd";
 import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
-import debounce from "../../../utils/debounce";
 import { FormItemWithMaxAddon } from "../EnhancedInputs";
 import { AdvancedOptions } from "./AdvancedOptions";
 import { QRCode } from "../../Common/QRCode";
+import { getRestUrl } from "../../../utils/withSLP";
+import { useInnerScroll } from "../../../utils/useInnerScroll";
+import { useDividendsStats } from "./useDividendsStats";
 
 const StyledPayDividends = styled.div`
   * {
     color: rgb(62, 63, 66) !important;
+  }
+
+  .ant-alert-message {
+    display: flex;
+    align-items: center;
+
+    .anticon {
+      margin-right: 7px;
+      font-size: 18px;
+    }
   }
 `;
 
@@ -42,8 +46,7 @@ export const StyledButtonWrapper = styled.div`
 `;
 
 const PayDividends = ({ SLP, token, onClose }) => {
-  const ContextValue = React.useContext(WalletContext);
-  const { wallet, balances, slpBalancesAndUtxos } = ContextValue;
+  const { wallet, balances, slpBalancesAndUtxos } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: false,
     amount: "",
@@ -56,82 +59,30 @@ const PayDividends = ({ SLP, token, onClose }) => {
     addressesToExclude: [{ address: "", valid: null }]
   });
   const [loading, setLoading] = useState(false);
-  const [stats, setStats] = useState({ tokens: 0, holders: 0, eligibles: 0, txFee: 0 });
-  const [showMaxAmountTooltip, setShowMaxAmountTooltip] = useState(false);
 
-  const totalBalance = balances.totalBalance;
+  useInnerScroll();
+
+  const { stats } = useDividendsStats({
+    token,
+    amount: formData.amount,
+    setLoading,
+    advancedOptions
+  });
 
   const submitEnabled =
     formData.tokenId &&
     formData.amount > DUST &&
-    (!formData.maxAmount || formData.amount <= formData.maxAmount);
+    (!stats.maxAmount || formData.amount <= stats.maxAmount) &&
+    (!advancedOptions ||
+      !advancedOptions.opReturnMessage ||
+      advancedOptions.opReturnMessage.length <= 60);
 
-  useEffect(() => {
-    setLoading(true);
-    retry(() => getBalancesForToken(token.tokenId))
-      .then(balancesForToken => {
-        setStats({
-          ...stats,
-          tokens: balancesForToken.totalBalance,
-          holders: balancesForToken.length ? balancesForToken.length : 0,
-          balances: balancesForToken,
-          txFee: 0
-        });
-      })
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (!stats.balances || !totalBalance || !slpBalancesAndUtxos) {
-      return;
-    }
-    try {
-      const { txFee } = getEligibleAddresses(
-        wallet,
-        stats.balances,
-        totalBalance,
-        slpBalancesAndUtxos.nonSlpUtxos,
-        advancedOptions
-      );
-      let { amount } = formData;
-      const maxAmount = (totalBalance - txFee).toFixed(8);
-      if (formData.maxAmountChecked && maxAmount !== formData.maxAmount) {
-        amount = maxAmount;
-        setShowMaxAmountTooltip(true);
-        setTimeout(() => setShowMaxAmountTooltip(false), 3000);
-      }
-
-      setFormData({
-        ...formData,
-        maxAmount,
-        amount
-      });
-    } catch (error) {}
-  }, [wallet, balances, stats.balances, slpBalancesAndUtxos, advancedOptions]);
-
-  const calcEligiblesAndFee = useCallback(
-    debounce((amount, advancedOptions) => {
-      if (stats.balances && !Number.isNaN(amount) && amount > 0) {
-        setLoading(true);
-        try {
-          const { addresses, txFee } = getEligibleAddresses(
-            wallet,
-            stats.balances,
-            amount,
-            slpBalancesAndUtxos.nonSlpUtxos,
-            advancedOptions
-          );
-          setStats({ ...stats, eligibles: addresses.length, txFee });
-        } catch (error) {
-          message.error("Unable to calculate eligible addresses due to network errors");
-        }
-        setLoading(false);
-      } else {
-        setStats({ ...stats, eligibles: 0, txFee: 0 });
-      }
-    }),
-    [wallet, stats]
-  );
+  if (formData.maxAmountChecked && stats.maxAmount !== formData.amount) {
+    setFormData({
+      ...formData,
+      amount: stats.maxAmount
+    });
+  }
 
   async function submit() {
     setFormData({
@@ -204,30 +155,25 @@ const PayDividends = ({ SLP, token, onClose }) => {
 
   const handleChange = e => {
     const { value, name } = e.target;
-    setFormData(p => ({ ...p, dirty: true, maxAmountChecked: false, [name]: value }));
-
-    if (name === "amount") {
-      calcEligiblesAndFee(value, advancedOptions);
-    }
+    const updatedFormData = { ...formData, dirty: true, maxAmountChecked: false, [name]: value };
+    setFormData(updatedFormData);
   };
 
-  const onMaxAmount = useCallback(async () => {
+  const onMaxAmount = async () => {
     setLoading(true);
 
     try {
-      let amount = formData.maxAmount >= 0 ? formData.maxAmount : 0;
       setFormData({
         ...formData,
         maxAmountChecked: true,
-        amount
+        amount: stats.maxAmount
       });
-      await calcEligiblesAndFee(amount, advancedOptions);
     } catch (err) {
       message.error("Unable to calculate the max amount due to network errors");
     }
 
     setLoading(false);
-  }, [formData, advancedOptions]);
+  };
 
   const setAdvancedOptionsAndCalcEligibles = options => {
     setFormData({
@@ -235,7 +181,6 @@ const PayDividends = ({ SLP, token, onClose }) => {
       dirty: true
     });
     setAdvancedOptions(options);
-    calcEligiblesAndFee(formData.amount, options);
   };
 
   return (
@@ -319,35 +264,44 @@ const PayDividends = ({ SLP, token, onClose }) => {
                   <Row type="flex">
                     <Col span={24}>
                       <Form style={{ width: "auto", marginBottom: "1em" }} noValidate>
-                        <Tooltip
-                          placement="topRight"
-                          visible={showMaxAmountTooltip}
-                          title={`Max amount changed to ${formData.maxAmount}!`}
-                        >
-                          <FormItemWithMaxAddon
-                            style={{ margin: 0 }}
-                            validateStatus={formData.dirty && !submitEnabled ? "error" : ""}
-                            help={
-                              formData.dirty && !submitEnabled
-                                ? `Must be greater than ${DUST} BCH ${
-                                    formData.maxAmount > 0
-                                      ? `and lower or equal to ${formData.maxAmount}`
-                                      : ""
-                                  }`
-                                : ""
-                            }
-                            onMax={onMaxAmount}
-                            inputProps={{
-                              suffix: "BCH",
-                              name: "amount",
-                              placeholder: "Amount",
-                              onChange: e => handleChange(e),
-                              required: true,
-                              value: formData.amount
-                            }}
-                          />
-                        </Tooltip>
+                        <FormItemWithMaxAddon
+                          style={{ margin: 0 }}
+                          validateStatus={formData.dirty && !submitEnabled ? "error" : ""}
+                          help={
+                            formData.dirty && !submitEnabled
+                              ? `Must be greater than ${DUST} BCH ${
+                                  stats.maxAmount > 0
+                                    ? `and lower or equal to ${stats.maxAmount}`
+                                    : ""
+                                }`
+                              : ""
+                          }
+                          onMax={onMaxAmount}
+                          inputProps={{
+                            suffix: "BCH",
+                            name: "amount",
+                            placeholder: "Amount",
+                            onChange: e => handleChange(e),
+                            required: true,
+                            value: formData.amount
+                          }}
+                        />
                       </Form>
+                    </Col>
+                    <Col span={24}>
+                      <Alert
+                        style={{ marginBottom: 14 }}
+                        message={
+                          <>
+                            <Icon type="info-circle" />
+                            Token holder address and balance list is provided by{" "}
+                            {`${getRestUrl()}slp/balancesForToken`} and represents the latest
+                            mempool state available to the API.
+                          </>
+                        }
+                        type="info"
+                        closable
+                      />
                     </Col>
                     <Col span={24}>
                       <AdvancedOptions
