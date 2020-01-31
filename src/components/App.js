@@ -99,9 +99,11 @@ const App = () => {
                 <Menu.Item key="0">
                   <span>Portfolio</span>
                 </Menu.Item>
-                <Menu.Item key="1">
-                  <span>Create</span>
-                </Menu.Item>
+                {wallet && (
+                  <Menu.Item key="1">
+                    <span>Create</span>
+                  </Menu.Item>
+                )}
                 <Menu.Item key="2">
                   <span>Configure</span>
                 </Menu.Item>
