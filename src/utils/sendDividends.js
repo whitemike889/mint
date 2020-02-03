@@ -12,8 +12,20 @@ export const getEncodedOpReturnMessage = withSLP((SLP, opReturnMessage = "") => 
 
 export const getBalancesForToken = withSLP(async (SLP, tokenId) => {
   try {
-    const balances = await SLP.Utils.balancesForToken(tokenId);
-    balances.totalBalance = balances.reduce((p, c) => c.tokenBalance + p, 0);
+    let balances;
+
+    try {
+      const response = await fetch(
+        `https://slp.api.wallet.bitcoin.com/v2/slp/balancesForToken/${tokenId}`
+      );
+      if (!response.ok) {
+        throw new Error();
+      }
+      balances = await response.json();
+    } catch (err) {
+      balances = await SLP.Utils.balancesForToken(tokenId);
+    }
+    balances.totalBalance = balances.reduce((p, c) => p.plus(c.tokenBalanceString), new Big(0));
     return balances;
   } catch (err) {
     console.error(`Error in getTokenInfo: `, err);
