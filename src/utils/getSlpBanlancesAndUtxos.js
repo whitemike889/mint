@@ -37,7 +37,6 @@ const decodeTxOut = withSLP((SLP, txOut) => {
   const vout = parseInt(txOut.vout, 10);
 
   const script = SLP.Script.toASM(Buffer.from(txOut.tx.vout[0].scriptPubKey.hex, "hex")).split(" ");
-
   const type = getSLPTxType(script);
 
   if (type === "genesis") {

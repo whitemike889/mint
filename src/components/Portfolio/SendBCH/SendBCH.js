@@ -19,7 +19,7 @@ export const StyledButtonWrapper = styled.div`
 `;
 
 const SendBCH = ({ onClose, outerAction }) => {
-  const { wallet, balances, slpBalancesAndUtxos } = React.useContext(WalletContext);
+  const { wallet, balances, slpBalancesAndUtxos, tokens } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: true,
     value: "",
@@ -102,7 +102,8 @@ const SendBCH = ({ onClose, outerAction }) => {
       const details = await SLP.Address.details(wallet.cashAddresses);
       const resp = await getTransactionHistory(
         wallet.cashAddresses,
-        details.map(detail => detail.transactions)
+        details.map(detail => detail.transactions),
+        tokens
       );
       await fetch("https://markets.api.bitcoin.com/live/bitcoin")
         .then(response => {

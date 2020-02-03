@@ -26,11 +26,10 @@ export default () => {
   const [tokenCardAction, setTokenCardAction] = useState("details");
   const [history, setHistory] = useState(null);
   const [outerAction, setOuterAction] = useState(false);
-  const getTokenHistory = async tokenId => {
+  const getTokenHistory = async tokenInfo => {
     setLoadingTokenHistory(true);
     try {
-      const resp = await getTokenTransactionHistory(wallet.slpAddresses, tokenId);
-
+      const resp = await getTokenTransactionHistory(wallet.slpAddresses, tokenInfo);
       setHistory(resp);
     } catch (err) {
       const message = err.message;
@@ -50,7 +49,7 @@ export default () => {
     setAction(null);
     if (tokenCardAction === "details") {
       setTokenCardAction("history");
-      getTokenHistory(tokenId);
+      getTokenHistory(tokens.find(token => token.tokenId === tokenId).info);
     } else if (tokenCardAction === "history") {
       setTokenCardAction("details");
     } else if (tokenCardAction === null) {
@@ -58,7 +57,7 @@ export default () => {
         setTokenCardAction("details");
       } else if (e.target.value === "history") {
         setTokenCardAction("history");
-        getTokenHistory(tokenId);
+        getTokenHistory(tokens.find(token => token.tokenId === tokenId).info);
       }
     }
   };
@@ -335,7 +334,7 @@ export default () => {
                               >
                                 {el.txid}
                               </Paragraph>
-                              <p>{`Confirmed: ${el.confirmed ? "Yes" : "No"}`}</p>
+                              <p>{`Confirmations: ${el.confirmations}`}</p>
                             </a>
                           </div>
                         ))}
