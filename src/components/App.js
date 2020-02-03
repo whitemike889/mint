@@ -48,9 +48,6 @@ const App = () => {
     }
   };
 
-  console.log("window.innerWidth :", window.innerWidth);
-  console.log("mobile :", mobile);
-
   const handleResize = () => setMobile(window.innerWidth < 768);
   React.useEffect(() => {
     handleResize();
