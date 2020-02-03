@@ -95,7 +95,7 @@ const App = () => {
                 mobile
                   ? {
                       zIndex: "100",
-                      position: "absolute",
+                      position: "fixed",
                       height: document.body.scrollHeight
                     }
                   : { height: "100%" }
