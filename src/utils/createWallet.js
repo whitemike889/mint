@@ -9,7 +9,7 @@ export const getWallet = () => {
   }
 
   try {
-    wallet = JSON.parse(window.localStorage.getItem("wallet") || undefined);
+    wallet = getWalletDetails(JSON.parse(window.localStorage.getItem("wallet") || undefined));
     window.localStorage.setItem("wallet", JSON.stringify(wallet));
   } catch (error) {}
   return wallet;
