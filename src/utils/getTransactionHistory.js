@@ -24,7 +24,8 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
         date: new Date(),
         confirmations: el.confirmations,
         transactionBalance:
-          (cashAddresses.includes(el.vin[0].cashAddress) ? -1 : 1) * el.vout[0].value
+          (cashAddresses.includes(SLP.Address.toCashAddress(el.vin[0].addr)) ? -1 : 1) *
+          el.vout[0].value
       }));
     const unconfirmedBchTxids = transactionHistory.unconfirmed.map(tx => tx.txid);
 
@@ -34,7 +35,6 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
       .reduce((a, b) => a.concat(b), []);
     const confirmedSlpTxids = [...new Set(concatenatedConfirmedSlpTxids)];
     const slpTxids = unconfirmedSlpTxids.concat(confirmedSlpTxids);
-    // const confirmedBchTxids =
 
     const remainingNumberTxsDetails = 30 - transactionHistory.unconfirmed.length;
 
