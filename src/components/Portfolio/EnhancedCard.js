@@ -24,8 +24,9 @@ const GlobalStyle = createGlobalStyle`
     }
 
     .ant-alert {
-      background-color: #FFFFFF !important;
-      border: none !important;
+      background: #fbfcfd !important;
+      border: 1px solid #eaedf3 !important;
+      // padding-left: 40px !important;
 
       * {
         color: rgb(62, 63, 66) !important;
