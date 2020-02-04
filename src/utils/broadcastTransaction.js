@@ -7,7 +7,8 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
     const TRANSACTION_TYPE =
       (args.additionalTokenQty && args.tokenId && "IS_MINTING") ||
       (args.initialTokenQty && args.symbol && args.name && "IS_CREATING") ||
-      (args.amount && args.tokenId && args.tokenReceiverAddress && "IS_SENDING");
+      (args.amount && args.tokenId && args.tokenReceiverAddress && "IS_SENDING") ||
+      (args.amount && args.tokenId && "IS_BURNING");
 
     const { Path245, Path145 } = wallet;
 
@@ -34,6 +35,9 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
       case "IS_SENDING":
         config.tokenReceiverAddress = args.tokenReceiverAddress;
         createTransaction = async config => SLPInstance.TokenType1.send(config);
+        break;
+      case "IS_BURNING":
+        createTransaction = async config => SLPInstance.TokenType1.burn(config);
         break;
       default:
         break;
