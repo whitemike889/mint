@@ -1,6 +1,7 @@
 import React from "react";
 import "antd/dist/antd.less";
 import "../index.css";
+import { useSwipeable } from "react-swipeable";
 import { Layout, Menu, Radio } from "antd";
 import Portfolio from "./Portfolio/Portfolio";
 import Create from "./Create/Create";
@@ -55,151 +56,176 @@ const App = () => {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
+  const handleSwipe = useSwipeable({
+    trackMouse: mobile,
+    onSwipedRight: () => (mobile ? setCollapsed(false) : null),
+    onSwipedLeft: () => (mobile ? setCollapsed(true) : null)
+  });
 
   return (
     <Router>
       <div className="App">
         <Layout style={{ minHeight: "100vh" }}>
-          <Sider
-            breakpoint="lg"
-            collapsedWidth="0"
-            collapsed={collapsed}
-            onCollapse={() => setCollapsed(!collapsed)}
-            width="256"
+          <div
+            {...handleSwipe}
             style={
               mobile
                 ? {
-                    zIndex: "100",
+                    zIndex: "1000",
                     position: "absolute",
-                    height: !collapsed ? document.body.scrollHeight : "100vh"
+                    height: document.body.scrollHeight,
+                    float: "left",
+                    width: collapsed ? "40px" : "296px"
                   }
-                : null
+                : {
+                    zIndex: "1000",
+                    position: "relative",
+                    float: "left",
+                    width: "256px"
+                  }
             }
           >
-            <div className="logo">
-              <img src={logo} alt="Bitcoin.com Mint" />
-            </div>
-            <div
-              style={{
-                background: "rgba(0, 0, 0, 0.5)",
-                width: "100%",
-                height: "1px",
-                marginBottom: "26px",
-                marginTop: "19px"
-              }}
-            />
-            <Menu
-              theme="dark"
-              selectedKeys={[key]}
-              onClick={e => handleChange(e)}
-              defaultSelectedKeys={["1"]}
-              style={{ textAlign: "left" }}
+            <Sider
+              breakpoint="md"
+              collapsedWidth="0"
+              collapsed={collapsed}
+              onCollapse={() => setCollapsed(!collapsed)}
+              width="256"
+              style={
+                mobile
+                  ? {
+                      zIndex: "100",
+                      position: "fixed",
+                      height: document.body.scrollHeight
+                    }
+                  : { height: "100%" }
+              }
             >
-              <Menu.ItemGroup style={{ marginTop: "0px" }} key="menu" title="MENU">
-                <Menu.Item key="0">
-                  <span>Portfolio</span>
-                </Menu.Item>
-                {wallet && (
-                  <Menu.Item key="1">
-                    <span>Create</span>
+              <div className="logo">
+                <img src={logo} alt="Bitcoin.com Mint" />
+              </div>
+              <div
+                style={{
+                  background: "rgba(0, 0, 0, 0.5)",
+                  width: "100%",
+                  height: "1px",
+                  marginBottom: "26px",
+                  marginTop: "19px"
+                }}
+              />
+              <Menu
+                theme="dark"
+                selectedKeys={[key]}
+                onClick={e => handleChange(e)}
+                defaultSelectedKeys={["1"]}
+                style={{ textAlign: "left" }}
+              >
+                <Menu.ItemGroup style={{ marginTop: "0px" }} key="menu" title="MENU">
+                  <Menu.Item key="0">
+                    <span>Portfolio</span>
                   </Menu.Item>
-                )}
-                <Menu.Item key="2">
-                  <span>Configure</span>
-                </Menu.Item>
-                <Menu.Item key="3">
-                  <span>Audit</span>
-                </Menu.Item>
-                <Menu.SubMenu key="4" title={<span>Links</span>}>
-                  <Menu.Item key="5">
-                    <a href="https://free.bitcoin.com/" target="_blank" rel="noopener noreferrer">
-                      Faucet (Free BCH)
-                    </a>
+                  {wallet && (
+                    <Menu.Item key="1">
+                      <span>Create</span>
+                    </Menu.Item>
+                  )}
+                  <Menu.Item key="2">
+                    <span>Configure</span>
                   </Menu.Item>
-                  <Menu.Item key="6">
-                    <a
-                      href="https://exchange.bitcoin.com/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Exchange
-                    </a>
+                  <Menu.Item key="3">
+                    <span>Audit</span>
                   </Menu.Item>
-                  <Menu.Item key="7">
-                    {" "}
-                    <a
-                      href="https://cashgames.bitcoin.com/home"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Games
-                    </a>
-                  </Menu.Item>
-                  <Menu.Item key="8">
-                    {" "}
-                    <a href="https://local.bitcoin.com" target="_blank" rel="noopener noreferrer">
-                      Trade Locally
-                    </a>
-                  </Menu.Item>
-                </Menu.SubMenu>
-              </Menu.ItemGroup>
-
-              {wallet ? (
-                <Menu.ItemGroup key="menu-receive" title="RECEIVE">
-                  <div
-                    style={{
-                      marginLeft: "20px",
-                      paddingTop: "10px"
-                      // display: `${window.innerWidth > 768 ? "none" : null}`
-                    }}
-                  >
-                    <div>
-                      <QRCode
-                        id="borderedQRCode"
-                        address={
-                          address === "slpAddress"
-                            ? wallet.Path245.slpAddress
-                            : wallet.Path145.cashAddress
-                        }
-                      />
-                    </div>
-
-                    <Radio.Group
-                      defaultValue="slpAddress"
-                      // onChange={e => handleChangeAddress(e)}
-                      value={address}
-                      size="small"
-                      buttonStyle="solid"
-                      ref={radio}
-                    >
-                      <Radio.Button
-                        style={{
-                          borderRadius: "19.5px",
-                          height: "40px",
-                          width: "103px"
-                        }}
-                        value="slpAddress"
-                        onClick={e => handleChangeAddress(e)}
+                  <Menu.SubMenu key="4" title={<span>Links</span>}>
+                    <Menu.Item key="5">
+                      <a href="https://free.bitcoin.com/" target="_blank" rel="noopener noreferrer">
+                        Faucet (Free BCH)
+                      </a>
+                    </Menu.Item>
+                    <Menu.Item key="6">
+                      <a
+                        href="https://exchange.bitcoin.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        SLP Tokens
-                      </Radio.Button>
-                      <Radio.Button
-                        style={{
-                          borderRadius: "19.5px",
-                          height: "40px",
-                          width: "103px"
-                        }}
-                        value="cashAddress"
-                        onClick={e => handleChangeAddress(e)}
+                        Exchange
+                      </a>
+                    </Menu.Item>
+                    <Menu.Item key="7">
+                      {" "}
+                      <a
+                        href="https://cashgames.bitcoin.com/home"
+                        target="_blank"
+                        rel="noopener noreferrer"
                       >
-                        Bitcoin Cash
-                      </Radio.Button>
-                    </Radio.Group>
-                  </div>
+                        Games
+                      </a>
+                    </Menu.Item>
+                    <Menu.Item key="8">
+                      {" "}
+                      <a href="https://local.bitcoin.com" target="_blank" rel="noopener noreferrer">
+                        Trade Locally
+                      </a>
+                    </Menu.Item>
+                  </Menu.SubMenu>
                 </Menu.ItemGroup>
-              ) : null}
-            </Menu>
-          </Sider>
+
+                {wallet ? (
+                  <Menu.ItemGroup key="menu-receive" title="RECEIVE">
+                    <div
+                      style={{
+                        marginLeft: "20px",
+                        paddingTop: "10px"
+                        // display: `${window.innerWidth > 768 ? "none" : null}`
+                      }}
+                    >
+                      <div>
+                        <QRCode
+                          id="borderedQRCode"
+                          address={
+                            address === "slpAddress"
+                              ? wallet.Path245.slpAddress
+                              : wallet.Path145.cashAddress
+                          }
+                        />
+                      </div>
+
+                      <Radio.Group
+                        defaultValue="slpAddress"
+                        // onChange={e => handleChangeAddress(e)}
+                        value={address}
+                        size="small"
+                        buttonStyle="solid"
+                        ref={radio}
+                      >
+                        <Radio.Button
+                          style={{
+                            borderRadius: "19.5px",
+                            height: "40px",
+                            width: "103px"
+                          }}
+                          value="slpAddress"
+                          onClick={e => handleChangeAddress(e)}
+                        >
+                          SLP Tokens
+                        </Radio.Button>
+                        <Radio.Button
+                          style={{
+                            borderRadius: "19.5px",
+                            height: "40px",
+                            width: "103px"
+                          }}
+                          value="cashAddress"
+                          onClick={e => handleChangeAddress(e)}
+                        >
+                          Bitcoin Cash
+                        </Radio.Button>
+                      </Radio.Group>
+                    </div>
+                  </Menu.ItemGroup>
+                ) : null}
+              </Menu>
+            </Sider>
+          </div>
           <Layout style={{ backgroundColor: "#FBFBFD" }}>
             <Header
               style={{
