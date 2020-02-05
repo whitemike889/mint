@@ -8,12 +8,14 @@ import makeBlockie from "ethereum-blockies-base64";
 import Mint from "./Mint/Mint";
 import Transfer from "./Transfer/Transfer";
 import PayDividends from "./PayDividends/PayDividends";
+import Burn from "./Burn/Burn";
 import SendBCH from "./SendBCH/SendBCH";
-import { PlaneIcon, HammerIcon } from "../Common/CustomIcons";
+import { PlaneIcon, HammerIcon, FireIcon } from "../Common/CustomIcons";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { OnBoarding } from "../OnBoarding/OnBoarding";
 import getTokenTransactionHistory from "../../utils/getTokenTransactionHistory";
 import bchFlagLogo from "../../assets/4-bitcoin-cash-logo-flag.png";
+import broadcastTransaction from "../../utils/broadcastTransaction";
 
 export default () => {
   const ContextValue = React.useContext(WalletContext);
@@ -115,6 +117,21 @@ export default () => {
     return actions;
   };
 
+  const renderBurnAction = tokenCardAction => {
+    if (tokenCardAction) {
+      return (
+        <FireIcon
+          style={{ position: "absolute", top: "50%", right: "13px" }}
+          onClick={() => {
+            setAction("burn");
+            setTokenCardAction(tokenCardAction !== null ? null : tokenCardAction);
+          }}
+        />
+      );
+    }
+
+    return "";
+  };
   return (
     <Row type="flex" gutter={32} style={{ position: "relative" }}>
       {!loading && wallet && (
@@ -358,6 +375,9 @@ export default () => {
                     {selectedToken && action === "dividends" && tokenCardAction === null ? (
                       <PayDividends token={selectedToken} onClose={onClose} />
                     ) : null}
+                    {selectedToken && action === "burn" && tokenCardAction === null ? (
+                      <Burn token={selectedToken} onClose={onClose} />
+                    ) : null}
                   </Spin>
                 )}
               >
@@ -405,6 +425,7 @@ export default () => {
                       >
                         {token.info && token.info.name}
                       </div>
+                      {renderBurnAction(tokenCardAction)}
                     </div>
                   }
                   description={
