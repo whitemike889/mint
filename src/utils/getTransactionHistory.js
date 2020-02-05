@@ -54,9 +54,11 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
                 .map(element => +element.value)
                 .reduce((a, b) => a + b, 0) * -1,
             type: "MintDividend Sent",
-            addrs: vout
-              .slice(1, vout.length - 1)
-              .map(element => SLP.Address.toCashAddress(element.scriptPubKey.addresses[0])),
+            outputs: vout.slice(1, vout.length - 1).map(element => ({
+              address: SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]),
+              amount: +element.value * -1
+            })),
+
             metaData: isDividends
           };
         if (
@@ -76,12 +78,15 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
               .map(el => +el.value)
               .reduce((a, b) => a + b, 0),
             type: "MintDividend Received",
-            addrs: vout
+            outputs: vout
               .slice(1, vout.length - 1)
               .filter(element =>
                 cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
               )
-              .map(el => SLP.Address.toCashAddress(el.scriptPubKey.addresses[0])),
+              .map(el => ({
+                address: SLP.Address.toCashAddress(el.scriptPubKey.addresses[0]),
+                amount: +el.value
+              })),
             metaData: isDividends
           };
       } else if (!hasOpReturn(vout)) {

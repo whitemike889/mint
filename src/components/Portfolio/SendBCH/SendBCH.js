@@ -284,9 +284,15 @@ const SendBCH = ({ onClose, outerAction }) => {
                             } USD`}</p>
                             {el.transactionBalance.type.includes("MintDividend") && (
                               <>
-                                <h4>Addresses:</h4>
-                                {el.transactionBalance.addrs.map(addr => (
-                                  <p>{`${addr}`}</p>
+                                <h4>Outputs:</h4>
+                                {el.transactionBalance.outputs.map(output => (
+                                  <>
+                                    <p>{`Address: ${output.address}`}</p>
+                                    <p>{`Amount: ${output.amount > 0 ? "+" : ""}${
+                                      output.amount
+                                    }`}</p>
+                                    <br />
+                                  </>
                                 ))}
 
                                 <Paragraph
