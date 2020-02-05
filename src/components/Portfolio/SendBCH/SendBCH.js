@@ -248,7 +248,12 @@ const SendBCH = ({ onClose, outerAction }) => {
                   {history.bchTransactions.map(el => (
                     <div
                       style={{
-                        background: el.transactionBalance > 0 ? "#D4EFFC" : " #ffd59a",
+                        background:
+                          el.transactionBalance.type !== "unknow"
+                            ? el.transactionBalance.balance > 0
+                              ? "#D4EFFC"
+                              : " #ffd59a"
+                            : "#D3D3D3",
                         color: "black",
                         borderRadius: "12px",
                         marginBottom: "18px",
@@ -262,18 +267,43 @@ const SendBCH = ({ onClose, outerAction }) => {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <p>{el.transactionBalance > 0 ? "Received" : "Sent"}</p>
+                        <p>{el.transactionBalance.type}</p>
                         <p>{el.date.toLocaleString()}</p>
+                        {el.transactionBalance.type !== "unknow" && (
+                          <>
+                            {" "}
+                            <p>{`${el.transactionBalance.balance > 0 ? "+" : ""}${
+                              el.transactionBalance.balance
+                            } BCH`}</p>
+                            <p>{`${el.transactionBalance.balance > 0 ? "+$" : "-$"}${
+                              (Math.abs(el.transactionBalance.balance) / bchToDollar)
+                                .toFixed(2)
+                                .toString() === "0.00"
+                                ? 0.01
+                                : (Math.abs(el.transactionBalance.balance) / bchToDollar).toFixed(2)
+                            } USD`}</p>
+                            {el.transactionBalance.type.includes("MintDividend") && (
+                              <>
+                                <h4>Addresses:</h4>
+                                {el.transactionBalance.addrs.map(addr => (
+                                  <p>{`${addr}`}</p>
+                                ))}
 
-                        <p>{`${el.transactionBalance > 0 ? "+" : ""}${
-                          el.transactionBalance
-                        } BCH`}</p>
-                        <p>{`${el.transactionBalance > 0 ? "+$" : "-$"}${
-                          (Math.abs(el.transactionBalance) / bchToDollar).toFixed(2).toString() ===
-                          "0.00"
-                            ? 0.01
-                            : (Math.abs(el.transactionBalance) / bchToDollar).toFixed(2)
-                        } USD`}</p>
+                                <Paragraph
+                                  onClick={e => e.preventDefault()}
+                                  small
+                                  ellipsis
+                                  copyable={{ text: el.transactionBalance.metaData.tokenId }}
+                                  style={{ whiteSpace: "nowrap", color: "black", maxWidth: "90%" }}
+                                >
+                                  {`tokenId: ${el.transactionBalance.metaData.tokenId}`}
+                                </Paragraph>
+
+                                <p>{`Message: ${el.transactionBalance.metaData.message}`}</p>
+                              </>
+                            )}
+                          </>
+                        )}
 
                         <Paragraph
                           small

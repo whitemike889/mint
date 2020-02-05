@@ -37,10 +37,16 @@ export const sendBch = withSLP(
         transactionBuilder.addInput(txid, vout);
         inputUtxos.push(utxo);
 
-        const byteCount = SLP.BitcoinCash.getByteCount(
-          { P2PKH: inputUtxos.length },
-          { P2PKH: addresses.length + 1 }
-        );
+        console.log("encodedOpReturn :", encodedOpReturn);
+        const byteCount = encodedOpReturn
+          ? SLP.BitcoinCash.getByteCount(
+              { P2PKH: inputUtxos.length },
+              { P2PKH: addresses.length + 2 }
+            )
+          : SLP.BitcoinCash.getByteCount(
+              { P2PKH: inputUtxos.length },
+              { P2PKH: addresses.length + 1 }
+            );
         const satoshisPerByte = SATOSHIS_PER_BYTE;
         txFee = encodedOpReturn
           ? Math.floor(satoshisPerByte * (byteCount + encodedOpReturn.length))
