@@ -1,85 +1,239 @@
 import withSLP from "./withSLP";
+import chunk from "lodash/chunk";
+import { getUnconfirmedTxs, getAllConfirmedSlpTxs } from "./getTokenTransactionHistory";
+import { isSlpTx } from "./decodeRawSlpTransactions";
 
-const getTransactionHistory = async (SLP, cashAddresses, transactions) => {
+const getLastTxDetails = withSLP(
+  async (SLP, remainingNumberTxsDetails, confirmedBchTxids, lastSliceSize) => {
+    const lastNtrancationIds = (M, N, transactionIds) => transactionIds.map(el => el.slice(M, N));
+    const slicedTxids = lastNtrancationIds(
+      lastSliceSize,
+      lastSliceSize + remainingNumberTxsDetails,
+      confirmedBchTxids
+    );
+    const concatenatedTxids = slicedTxids.reduce((a, b) => a.concat(b), []);
+    const uniqueTxids = [...new Set(concatenatedTxids)];
+
+    const revertChunk = chunkedArray =>
+      chunkedArray.reduce((unchunkedArray, chunk) => [...unchunkedArray, ...chunk], []);
+
+    const txidChunks = chunk(uniqueTxids, 20);
+    const txidDetails = revertChunk(
+      await Promise.all(txidChunks.map(txidChunk => SLP.Transaction.details(txidChunk)))
+    );
+    return txidDetails;
+  }
+);
+
+export const isBchDividens = withSLP((SLP, vout) => {
+  const scriptASMArray = SLP.Script.toASM(Buffer.from(vout[0].scriptPubKey.hex, "hex")).split(" ");
+  const metaData =
+    scriptASMArray.length > 1
+      ? Buffer.from(scriptASMArray[1], "hex")
+          .toString("ascii")
+          .split(" ")
+      : null;
+  return scriptASMArray[0] === "OP_RETURN" &&
+    metaData &&
+    metaData[1] &&
+    metaData[1].includes("MintDividend")
+    ? decodeBchDividensMetaData(metaData)
+    : false;
+});
+
+export const hasOpReturn = withSLP((SLP, vout) => {
+  const scriptASMArray = SLP.Script.toASM(Buffer.from(vout[0].scriptPubKey.hex, "hex")).split(" ");
+
+  return scriptASMArray[0] === "OP_RETURN";
+});
+
+const decodeBchDividensMetaData = metaData => {
+  return {
+    tokenId: metaData[0],
+    message: metaData.length > 2 ? metaData.slice(2, metaData.length).join(" ") : ""
+  };
+};
+
+const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) => {
   try {
-    const query = (cashAddress, qty) => ({
-      v: 3,
-      q: {
-        db: ["c", "u"],
-        find: {
-          $or: [
-            {
-              "in.e.a": SLP.Address.toSLPAddress(cashAddress)
-            },
-            {
-              "out.e.a": SLP.Address.toSLPAddress(cashAddress)
-            }
-          ]
-        },
-        sort: {
-          "blk.i": -1
-        },
-        limit: qty
-      },
-      r: {
-        f: "[.[] | { txid: .tx.h } ]"
-      }
-    });
+    const calculateTransactionBalance = vout => {
+      const isDividends = isBchDividens(vout);
 
+      if (isDividends) {
+        if (
+          vout.length > 2 &&
+          cashAddresses.includes(
+            SLP.Address.toCashAddress(vout[vout.length - 1].scriptPubKey.addresses[0])
+          )
+        )
+          return {
+            balance:
+              vout
+                .slice(1, vout.length - 1)
+                .map(element => +element.value)
+                .reduce((a, b) => a + b, 0) * -1,
+            type: "MintDividend Sent",
+            outputs: vout.slice(1, vout.length - 1).map(element => ({
+              address: SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]),
+              amount: +element.value * -1
+            })),
+
+            metaData: isDividends
+          };
+        if (
+          vout.length > 2 &&
+          vout
+            .slice(1, vout.length - 1)
+            .findIndex(element =>
+              cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
+            ) !== -1
+        )
+          return {
+            balance: vout
+              .slice(1, vout.length - 1)
+              .filter(element =>
+                cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
+              )
+              .map(el => +el.value)
+              .reduce((a, b) => a + b, 0),
+            type: "MintDividend Received",
+            outputs: vout
+              .slice(1, vout.length - 1)
+              .filter(element =>
+                cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
+              )
+              .map(el => ({
+                address: SLP.Address.toCashAddress(el.scriptPubKey.addresses[0]),
+                amount: +el.value
+              })),
+            metaData: isDividends
+          };
+      } else if (!hasOpReturn(vout)) {
+        if (
+          vout.length === 1 &&
+          cashAddresses.includes(SLP.Address.toCashAddress(vout[0].scriptPubKey.addresses[0]))
+        )
+          return { balance: +vout[0].value, type: "Received" };
+        if (
+          vout.length === 1 &&
+          !cashAddresses.includes(SLP.Address.toCashAddress(vout[0].scriptPubKey.addresses[0]))
+        )
+          return { balance: +vout[0].value * -1, type: "Sent" };
+        if (
+          vout.length > 1 &&
+          cashAddresses.includes(
+            SLP.Address.toCashAddress(vout[vout.length - 1].scriptPubKey.addresses[0])
+          )
+        )
+          return {
+            balance:
+              vout
+                .slice(0, vout.length - 1)
+                .map(element => +element.value)
+                .reduce((a, b) => a + b, 0) * -1,
+            type: "Sent"
+          };
+        if (
+          vout.length > 1 &&
+          vout.findIndex(element =>
+            cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
+          ) !== -1
+        )
+          return {
+            balance: +vout.find(element =>
+              cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
+            ).value,
+            type: "Received"
+          };
+      } else {
+        return {
+          balance: null,
+          type: "Unknown"
+        };
+      }
+    };
+
+    const transactionHistory = {
+      confirmed: [],
+      unconfirmed: []
+    };
+
+    const slpAddresses = cashAddresses.map(addr => SLP.Address.toSLPAddress(addr));
     const nonZeroIndexes = transactions.reduce((a, e, i) => {
       if (e.length > 0) a.push(i);
       return a;
     }, []);
 
-    const queryResults = Array.from({ length: nonZeroIndexes.length });
-    const slpDbInstance = SLP.SLPDB;
+    const unconfirmedTxs = await getUnconfirmedTxs(slpAddresses);
+    const unconfirmedSlpTxids = unconfirmedTxs.filter(tx => isSlpTx(tx)).map(tx => tx.txid);
+    transactionHistory.unconfirmed = unconfirmedTxs
+      .filter(tx => !isSlpTx(tx))
+      .map(el => ({
+        txid: el.txid,
+        date: new Date(),
+        confirmations: el.confirmations,
+        transactionBalance: calculateTransactionBalance(el.vout)
+      }));
 
-    for (let i = 0; i < nonZeroIndexes.length; i++) {
-      const el = nonZeroIndexes[i];
-      queryResults[i] = await slpDbInstance.get(query(cashAddresses[el], transactions[el].length));
-    }
+    const unconfirmedBchTxids = transactionHistory.unconfirmed.map(tx => tx.txid);
 
-    const tokensTxIds = queryResults.map(el => el.c.concat(el.u).map(tx => tx.txid));
+    const confirmedSlpTxs = await getAllConfirmedSlpTxs(slpAddresses, tokens);
 
-    const bchTxIds = Array.from({ length: nonZeroIndexes.length });
-    nonZeroIndexes.forEach((e, i) => {
-      bchTxIds[i] = transactions[e].filter(el => tokensTxIds[e] && !tokensTxIds[e].includes(el));
-    });
+    const concatenatedConfirmedSlpTxids = confirmedSlpTxs
+      .map(txsByAddr => txsByAddr.map(tx => tx.txid))
+      .reduce((a, b) => a.concat(b), []);
+    const confirmedSlpTxids = [...new Set(concatenatedConfirmedSlpTxids)];
+    const slpTxids = unconfirmedSlpTxids.concat(confirmedSlpTxids);
 
-    let bchTransactions = [];
+    let remainingNumberTxsDetails = 30 - transactionHistory.unconfirmed.length;
 
-    for (let i = 0; i < nonZeroIndexes.length; i++) {
-      const e = nonZeroIndexes[i];
-      if (transactions[e].length < 11)
-        bchTransactions = [...bchTransactions, ...(await SLP.Transaction.details(bchTxIds[i]))];
+    if (remainingNumberTxsDetails > 0) {
+      const confirmedBchTxids = Array.from({ length: nonZeroIndexes.length });
+      nonZeroIndexes.forEach((e, i) => {
+        confirmedBchTxids[i] = transactions[e].filter(
+          el => !slpTxids.includes(el) && !unconfirmedBchTxids.includes(el)
+        );
+      });
 
-      if (transactions[e].length > 10 && transactions[e].length < 21)
-        bchTransactions = [
-          ...bchTransactions,
-          ...(await SLP.Transaction.details(bchTxIds[i].slice(0, 10))),
-          ...(await SLP.Transaction.details(bchTxIds[i].slice(10, bchTxIds[i].length)))
-        ];
+      const txidDetails = await getLastTxDetails(remainingNumberTxsDetails, confirmedBchTxids, 0);
 
-      if (transactions[e].length > 20)
-        bchTransactions = [
-          ...bchTransactions,
-          ...(await SLP.Transaction.details(bchTxIds[i].slice(0, 10))),
-          ...(await SLP.Transaction.details(bchTxIds[i].slice(10, 20))),
-          ...(await SLP.Transaction.details(bchTxIds[i].slice(20, 30)))
-        ];
-    }
+      const bchTxidDetails = txidDetails
+        .filter(detail => !isSlpTx(detail))
+        .slice(0, remainingNumberTxsDetails);
 
-    return {
-      bchTransactions: bchTransactions
-        .reduce((a, b) => a.concat(b), [])
+      while (
+        Math.max(...confirmedBchTxids.map(txids => txids.length)) >
+        29 - transactionHistory.unconfirmed.length
+          ? bchTxidDetails.length < 30 - transactionHistory.unconfirmed.length
+          : bchTxidDetails.length < Math.max(...confirmedBchTxids.map(txids => txids.length))
+      ) {
+        const diff = 30 - transactionHistory.unconfirmed.length - bchTxidDetails.length;
+        const details = await getLastTxDetails(diff, confirmedBchTxids, remainingNumberTxsDetails);
+        remainingNumberTxsDetails += diff;
+        bchTxidDetails.concat(details.filter(detail => !isSlpTx(detail)));
+        if (
+          remainingNumberTxsDetails >
+          Math.max(...confirmedBchTxids.map(txids => txids.length)) - 1
+        )
+          break;
+      }
+
+      transactionHistory.confirmed = bchTxidDetails
         .sort((x, y) => y.time - x.time)
         .map(el => ({
           txid: el.txid,
           date: new Date(el.time * 1000),
           confirmations: el.confirmations,
-          transactionBalance:
-            (cashAddresses.includes(el.vin[0].cashAddress) ? -1 : 1) * el.vout[0].value
-        })),
+          transactionBalance: calculateTransactionBalance(el.vout)
+        }))
+        .slice(0, 30 - transactionHistory.unconfirmed.length);
+    }
+
+    const { unconfirmed, confirmed } = transactionHistory;
+    const history = unconfirmed.concat(confirmed);
+
+    return {
+      bchTransactions: history,
       wallets: nonZeroIndexes.map(el => cashAddresses[el])
     };
   } catch (e) {
