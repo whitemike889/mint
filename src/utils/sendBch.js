@@ -37,7 +37,6 @@ export const sendBch = withSLP(
         transactionBuilder.addInput(txid, vout);
         inputUtxos.push(utxo);
 
-        console.log("encodedOpReturn :", encodedOpReturn);
         const byteCount = encodedOpReturn
           ? SLP.BitcoinCash.getByteCount(
               { P2PKH: inputUtxos.length },

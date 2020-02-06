@@ -249,7 +249,7 @@ const SendBCH = ({ onClose, outerAction }) => {
                     <div
                       style={{
                         background:
-                          el.transactionBalance.type !== "unknow"
+                          el.transactionBalance.type !== "Unknown"
                             ? el.transactionBalance.balance > 0
                               ? "#D4EFFC"
                               : " #ffd59a"
@@ -269,7 +269,7 @@ const SendBCH = ({ onClose, outerAction }) => {
                       >
                         <p>{el.transactionBalance.type}</p>
                         <p>{el.date.toLocaleString()}</p>
-                        {el.transactionBalance.type !== "unknow" && (
+                        {el.transactionBalance.type !== "Unknown" && (
                           <>
                             {" "}
                             <p>{`${el.transactionBalance.balance > 0 ? "+" : ""}${
@@ -287,11 +287,22 @@ const SendBCH = ({ onClose, outerAction }) => {
                                 <h4>Outputs:</h4>
                                 {el.transactionBalance.outputs.map(output => (
                                   <>
-                                    <p>{`Address: ${output.address}`}</p>
-                                    <p>{`Amount: ${output.amount > 0 ? "+" : ""}${
-                                      output.amount
-                                    }`}</p>
-                                    <br />
+                                    <Paragraph
+                                      onClick={e => e.preventDefault()}
+                                      small
+                                      ellipsis
+                                      copyable={{ text: output.address }}
+                                      style={{
+                                        whiteSpace: "nowrap",
+                                        color: "black",
+                                        maxWidth: "90%"
+                                      }}
+                                    >
+                                      {`Address: ${output.address}`}
+                                    </Paragraph>
+                                    <p style={{ marginTop: "-20px" }}>{`amount: ${
+                                      output.amount > 0 ? "+" : ""
+                                    }${output.amount} BCH`}</p>
                                   </>
                                 ))}
 
@@ -305,7 +316,11 @@ const SendBCH = ({ onClose, outerAction }) => {
                                   {`tokenId: ${el.transactionBalance.metaData.tokenId}`}
                                 </Paragraph>
 
-                                <p>{`Message: ${el.transactionBalance.metaData.message}`}</p>
+                                <p>{`Message: ${
+                                  el.transactionBalance.metaData.message
+                                    ? el.transactionBalance.metaData.message
+                                    : "none"
+                                }`}</p>
                               </>
                             )}
                           </>

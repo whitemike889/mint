@@ -5,7 +5,6 @@ import { sendBch, SATOSHIS_PER_BYTE } from "./sendBch";
 export const DUST = 0.00005;
 
 export const getEncodedOpReturnMessage = withSLP((SLP, opReturnMessage = "", tokenId) => {
-  console.log("tokenId :", tokenId);
   const fullOpReturnMessage = `${tokenId} MintDividend${
     opReturnMessage ? `: ${opReturnMessage}` : ""
   }`;

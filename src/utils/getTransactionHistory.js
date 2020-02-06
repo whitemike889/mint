@@ -3,6 +3,28 @@ import chunk from "lodash/chunk";
 import { getUnconfirmedTxs, getAllConfirmedSlpTxs } from "./getTokenTransactionHistory";
 import { isSlpTx } from "./decodeRawSlpTransactions";
 
+const getLastTxDetails = withSLP(
+  async (SLP, remainingNumberTxsDetails, confirmedBchTxids, lastSliceSize) => {
+    const lastNtrancationIds = (M, N, transactionIds) => transactionIds.map(el => el.slice(M, N));
+    const slicedTxids = lastNtrancationIds(
+      lastSliceSize,
+      lastSliceSize + remainingNumberTxsDetails,
+      confirmedBchTxids
+    );
+    const concatenatedTxids = slicedTxids.reduce((a, b) => a.concat(b), []);
+    const uniqueTxids = [...new Set(concatenatedTxids)];
+
+    const revertChunk = chunkedArray =>
+      chunkedArray.reduce((unchunkedArray, chunk) => [...unchunkedArray, ...chunk], []);
+
+    const txidChunks = chunk(uniqueTxids, 20);
+    const txidDetails = revertChunk(
+      await Promise.all(txidChunks.map(txidChunk => SLP.Transaction.details(txidChunk)))
+    );
+    return txidDetails;
+  }
+);
+
 export const isBchDividens = withSLP((SLP, vout) => {
   const scriptASMArray = SLP.Script.toASM(Buffer.from(vout[0].scriptPubKey.hex, "hex")).split(" ");
   const metaData =
@@ -26,7 +48,6 @@ export const hasOpReturn = withSLP((SLP, vout) => {
 });
 
 const decodeBchDividensMetaData = metaData => {
-  console.log("metaData :", metaData);
   return {
     tokenId: metaData[0],
     message: metaData.length > 2 ? metaData.slice(2, metaData.length).join(" ") : ""
@@ -36,10 +57,8 @@ const decodeBchDividensMetaData = metaData => {
 const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) => {
   try {
     const calculateTransactionBalance = vout => {
-      console.log("vout :", vout);
       const isDividends = isBchDividens(vout);
 
-      console.log("isDividends :", isDividends);
       if (isDividends) {
         if (
           vout.length > 2 &&
@@ -129,7 +148,7 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
       } else {
         return {
           balance: null,
-          type: "unknow"
+          type: "Unknown"
         };
       }
     };
@@ -138,6 +157,7 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
       confirmed: [],
       unconfirmed: []
     };
+
     const slpAddresses = cashAddresses.map(addr => SLP.Address.toSLPAddress(addr));
     const nonZeroIndexes = transactions.reduce((a, e, i) => {
       if (e.length > 0) a.push(i);
@@ -158,13 +178,14 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
     const unconfirmedBchTxids = transactionHistory.unconfirmed.map(tx => tx.txid);
 
     const confirmedSlpTxs = await getAllConfirmedSlpTxs(slpAddresses, tokens);
+
     const concatenatedConfirmedSlpTxids = confirmedSlpTxs
       .map(txsByAddr => txsByAddr.map(tx => tx.txid))
       .reduce((a, b) => a.concat(b), []);
     const confirmedSlpTxids = [...new Set(concatenatedConfirmedSlpTxids)];
     const slpTxids = unconfirmedSlpTxids.concat(confirmedSlpTxids);
 
-    const remainingNumberTxsDetails = 30 - transactionHistory.unconfirmed.length;
+    let remainingNumberTxsDetails = 30 - transactionHistory.unconfirmed.length;
 
     if (remainingNumberTxsDetails > 0) {
       const confirmedBchTxids = Array.from({ length: nonZeroIndexes.length });
@@ -174,34 +195,33 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
         );
       });
 
-      const lastNtrancationIds = (N, transactionIds) => transactionIds.map(el => el.slice(0, N));
-      const slicedTxids = lastNtrancationIds(remainingNumberTxsDetails, confirmedBchTxids);
-      const concatenatedTxids = slicedTxids.reduce((a, b) => a.concat(b), []);
-      const uniqueTxids = [...new Set(concatenatedTxids)];
+      const txidDetails = await getLastTxDetails(remainingNumberTxsDetails, confirmedBchTxids, 0);
 
-      const revertChunk = chunkedArray =>
-        chunkedArray.reduce((unchunkedArray, chunk) => [...unchunkedArray, ...chunk], []);
+      const bchTxidDetails = txidDetails
+        .filter(detail => !isSlpTx(detail))
+        .slice(0, remainingNumberTxsDetails);
 
-      const txidChunks = chunk(uniqueTxids, 20);
-      const txidDetails = revertChunk(
-        await Promise.all(txidChunks.map(txidChunk => SLP.Transaction.details(txidChunk)))
-      );
-      console.log("transactionHistory.confirmed :", transactionHistory.confirmed);
+      while (bchTxidDetails.length < 30 - transactionHistory.unconfirmed.length) {
+        const diff = 30 - transactionHistory.unconfirmed.length - bchTxidDetails.length;
+        const details = await getLastTxDetails(diff, confirmedBchTxids, remainingNumberTxsDetails);
+        remainingNumberTxsDetails += diff;
+        bchTxidDetails.concat(details.filter(detail => !isSlpTx(detail)));
+      }
 
-      transactionHistory.confirmed = txidDetails
+      transactionHistory.confirmed = bchTxidDetails
         .sort((x, y) => y.time - x.time)
         .map(el => ({
           txid: el.txid,
           date: new Date(el.time * 1000),
           confirmations: el.confirmations,
           transactionBalance: calculateTransactionBalance(el.vout)
-        }));
+        }))
+        .slice(0, 30 - transactionHistory.unconfirmed.length);
     }
 
     const { unconfirmed, confirmed } = transactionHistory;
     const history = unconfirmed.concat(confirmed);
 
-    console.log("history :", history);
     return {
       bchTransactions: history,
       wallets: nonZeroIndexes.map(el => cashAddresses[el])
