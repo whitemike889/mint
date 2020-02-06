@@ -201,11 +201,21 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
         .filter(detail => !isSlpTx(detail))
         .slice(0, remainingNumberTxsDetails);
 
-      while (bchTxidDetails.length < 30 - transactionHistory.unconfirmed.length) {
+      while (
+        Math.max(...confirmedBchTxids.map(txids => txids.length)) >
+        29 - transactionHistory.unconfirmed.length
+          ? bchTxidDetails.length < 30 - transactionHistory.unconfirmed.length
+          : bchTxidDetails.length < Math.max(...confirmedBchTxids.map(txids => txids.length))
+      ) {
         const diff = 30 - transactionHistory.unconfirmed.length - bchTxidDetails.length;
         const details = await getLastTxDetails(diff, confirmedBchTxids, remainingNumberTxsDetails);
         remainingNumberTxsDetails += diff;
         bchTxidDetails.concat(details.filter(detail => !isSlpTx(detail)));
+        if (
+          remainingNumberTxsDetails >
+          Math.max(...confirmedBchTxids.map(txids => txids.length)) - 1
+        )
+          break;
       }
 
       transactionHistory.confirmed = bchTxidDetails
