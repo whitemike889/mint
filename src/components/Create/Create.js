@@ -11,14 +11,17 @@ import {
   Col,
   Card,
   Form,
-  Typography,
-  Collapse
+  Collapse,
+  Upload
 } from "antd";
+import Paragraph from "antd/lib/typography/Paragraph";
 import createToken from "../../utils/broadcastTransaction";
 import StyledCreate from "../Common/StyledPage";
 import { QRCode } from "../Common/QRCode";
 
-const { Paragraph } = Typography;
+import * as CryptoJS from "crypto-js";
+
+const { Dragger } = Upload;
 
 const Create = ({ history }) => {
   const ContextValue = React.useContext(WalletContext);
@@ -33,6 +36,82 @@ const Create = ({ history }) => {
     documentUri: "",
     amount: ""
   });
+  const [fileList, setFileList] = React.useState();
+  const [hash, setHash] = React.useState("");
+
+  const transformFile = file => {
+    clear();
+    return new Promise(resolve => {
+      const SHA256 = CryptoJS.algo.SHA256.create();
+
+      loadingHash(
+        file,
+        data => {
+          const wordBuffer = CryptoJS.lib.WordArray.create(data);
+          SHA256.update(wordBuffer);
+        },
+        () => {
+          const encrypted = SHA256.finalize().toString();
+          setHash(encrypted);
+          setLoading(false);
+          resolve();
+        }
+      );
+    });
+  };
+
+  const beforeUpload = () => {
+    setHash("");
+    setLoading(true);
+  };
+
+  const handleChangeUpload = info => {
+    let list = [...info.fileList];
+
+    setFileList(list.slice(-1));
+  };
+
+  const loadingHash = (file, callbackProgress, callbackFinal) => {
+    const chunkSize = 1024 * 1024;
+    let offset = 0;
+    const size = 1024 * 1024;
+    let partial;
+    let index = 0;
+
+    if (file.size === 0) {
+      callbackFinal();
+    }
+
+    while (offset < file.size) {
+      partial = file.slice(offset, offset + size);
+      const reader = new FileReader();
+      reader.size = chunkSize;
+      reader.offset = offset;
+      reader.index = index;
+      reader.onload = evt => callbackRead(reader, file, evt, callbackProgress, callbackFinal);
+
+      reader.readAsArrayBuffer(partial);
+      offset += chunkSize;
+      index += 1;
+    }
+  };
+
+  let lastOffset = 0;
+
+  const clear = () => (lastOffset = 0);
+
+  const callbackRead = (reader, file, evt, callbackProgress, callbackFinal) => {
+    if (lastOffset === reader.offset) {
+      lastOffset = reader.offset + reader.size;
+      callbackProgress(evt.target.result);
+      if (reader.offset + reader.size >= file.size) {
+        lastOffset = 0;
+        callbackFinal();
+      }
+    } else {
+      setTimeout(() => callbackRead(reader, file, evt, callbackProgress, callbackFinal), 10);
+    }
+  };
 
   async function handleCreateToken() {
     setData({
@@ -58,13 +137,13 @@ const Create = ({ history }) => {
     }
 
     setLoading(true);
-    const { tokenName, tokenSymbol, documentHash, documentUri, amount, decimals } = data;
+    const { tokenName, tokenSymbol, documentUri, amount, decimals } = data;
     try {
       const docUri = documentUri || "developer.bitcoin.com";
       const link = await createToken(wallet, {
         name: tokenName,
         symbol: tokenSymbol,
-        documentHash,
+        documentHash: hash,
         decimals,
         docUri,
         initialTokenQty: amount
@@ -179,14 +258,65 @@ const Create = ({ history }) => {
                     required
                   />
                 </Form.Item>
-                <Form.Item>
-                  <Input
-                    placeholder="white paper/document hash"
-                    name="documentHash"
-                    onChange={e => handleChange(e)}
-                    required
-                  />
+                <Form.Item style={{ lineHeight: "0px" }}>
+                  <Dragger
+                    multiple={false}
+                    action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
+                    transformFile={transformFile}
+                    beforeUpload={beforeUpload}
+                    onChange={handleChangeUpload}
+                    onRemove={() => false}
+                    fileList={fileList}
+                    name="documentHashUpload"
+                    style={{
+                      background: "#D3D3D3",
+                      borderRadius: "8px"
+                    }}
+                  >
+                    <Icon style={{ fontSize: "24px" }} type="upload" />
+                    <p>Click or drag file to this area to upload (optional)</p>
+                    <Input
+                      style={{ borderRadius: 0, align: "center" }}
+                      placeholder={"white paper/document hash (optional)"}
+                      name="documentHash"
+                      disabled
+                      value={hash}
+                    />
+                  </Dragger>
+                  {!loading && hash && (
+                    <>
+                      <p style={{ textAlign: "left", marginBottom: "-18px" }}>
+                        White paper/document hash:
+                      </p>
+                      <Paragraph small copyable={{ text: hash }} ellipsis>
+                        {hash}
+                      </Paragraph>
+                    </>
+                  )}
+
+                  <Collapse accordion>
+                    <Collapse.Panel
+                      header={<>What is white paper/document hash?</>}
+                      key="1"
+                      style={{ textAlign: "left" }}
+                    >
+                      <Paragraph>
+                        The document hash is a sha256 hash of the whitepaper for your token. You can
+                        create a hash of any document, and learn more about its use, at
+                        <strong>
+                          <a
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            href="https://notary.bitcoin.com"
+                          >
+                            {` notary.bitcoin.com`}
+                          </a>
+                        </strong>
+                      </Paragraph>
+                    </Collapse.Panel>
+                  </Collapse>
                 </Form.Item>
+
                 <Form.Item>
                   <Input
                     placeholder="token website e.g.: developer.bitcoin.com"
