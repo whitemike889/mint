@@ -106,7 +106,7 @@ const decodeTokenMetadata = withSLP((SLP, txDetails) => {
         ? parseInt(script[8].slice(3), 10)
         : parseInt(script[8], 16),
       documentUri: Buffer.from(script[6], "hex").toString("ascii"),
-      documentHash: script[7]
+      documentHash: script[7].startsWith("OP_0") ? "" : script[7]
     };
   } else {
     throw new Error("Invalid tx type");
