@@ -35,7 +35,7 @@ export const useDividendsStats = ({ token, amount, setLoading, advancedOptions }
 
   // max amount
   React.useEffect(() => {
-    if (!stats.balances || !balances.totalBalance || !slpBalancesAndUtxos) {
+    if (!stats.balances || !balances.totalBalance || !slpBalancesAndUtxos || !token) {
       return;
     }
     try {
@@ -44,12 +44,13 @@ export const useDividendsStats = ({ token, amount, setLoading, advancedOptions }
         stats.balances,
         balances.totalBalance,
         slpBalancesAndUtxos.nonSlpUtxos,
-        advancedOptions
+        advancedOptions,
+        token.tokenId
       );
       const maxAmount = (balances.totalBalance - txFee).toFixed(8);
       setStats(stats => ({ ...stats, maxAmount }));
     } catch (error) {}
-  }, [wallet, balances, stats.balances, slpBalancesAndUtxos, advancedOptions]);
+  }, [wallet, balances, stats.balances, slpBalancesAndUtxos, token, advancedOptions]);
 
   // eligible addresses to the amount
   React.useEffect(() => {
@@ -60,7 +61,8 @@ export const useDividendsStats = ({ token, amount, setLoading, advancedOptions }
           stats.balances,
           amount,
           slpBalancesAndUtxos.nonSlpUtxos,
-          advancedOptions
+          advancedOptions,
+          token.tokenId
         );
 
         setStats(stats => ({ ...stats, eligibles: addresses.length, txFee }));
@@ -70,7 +72,7 @@ export const useDividendsStats = ({ token, amount, setLoading, advancedOptions }
     } catch (error) {
       message.error("Unable to calculate eligible addresses due to network errors");
     }
-  }, [wallet, balances, stats.balances, slpBalancesAndUtxos, advancedOptions, amount]);
+  }, [wallet, balances, stats.balances, slpBalancesAndUtxos, advancedOptions, token, amount]);
 
   return {
     stats,
