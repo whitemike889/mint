@@ -50,7 +50,7 @@ const decodeTokenDetails = withSLP((SLP, txDetail) => {
         name: Buffer.from(script[5], "hex").toString("ascii"),
         decimals,
         documentUri: Buffer.from(script[6], "hex").toString("ascii"),
-        documentHash: Buffer.from(script[7], "hex").toString("ascii")
+        documentHash: script[7].startsWith("OP_0") ? "" : script[7]
       };
       tokenDetails.symbol = Buffer.from(script[4], "hex").toString("ascii");
       tokenDetails.outputs = [
