@@ -12,7 +12,8 @@ import {
   Card,
   Form,
   Collapse,
-  Upload
+  Upload,
+  Tooltip
 } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
 import createToken from "../../utils/broadcastTransaction";
@@ -36,12 +37,12 @@ const Create = ({ history }) => {
     documentUri: "",
     amount: ""
   });
-  const [fileList, setFileList] = React.useState();
   const [hash, setHash] = React.useState("");
+  const [file, setFile] = React.useState();
 
   const transformFile = file => {
     clear();
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       const SHA256 = CryptoJS.algo.SHA256.create();
 
       loadingHash(
@@ -54,23 +55,17 @@ const Create = ({ history }) => {
           const encrypted = SHA256.finalize().toString();
           setHash(encrypted);
           setLoading(false);
-          resolve();
+          reject();
         }
       );
     });
   };
 
-  const beforeUpload = () => {
+  const beforeUpload = file => {
+    setFile(file);
     setHash("");
     setLoading(true);
   };
-
-  const handleChangeUpload = info => {
-    let list = [...info.fileList];
-
-    setFileList(list.slice(-1));
-  };
-
   const loadingHash = (file, callbackProgress, callbackFinal) => {
     const chunkSize = 1024 * 1024;
     let offset = 0;
@@ -119,11 +114,6 @@ const Create = ({ history }) => {
       dirty: false
     });
 
-    // blank entry for decimals should be 0
-    if (data.decimals === "") {
-      data.decimals = 0;
-    }
-
     if (
       !data.tokenName ||
       !data.tokenSymbol ||
@@ -131,7 +121,8 @@ const Create = ({ history }) => {
       Number(data.amount) <= 0 ||
       (data.decimals !== "" && data.decimals < 0) ||
       (data.decimals !== "" && data.decimals > 9) ||
-      (data.decimals !== "" && data.decimals % 1 !== 0)
+      (data.decimals !== "" && data.decimals % 1 !== 0) ||
+      data.decimals === ""
     ) {
       return;
     }
@@ -229,12 +220,17 @@ const Create = ({ history }) => {
               </div>
               <Form>
                 <Form.Item
+                  label=" "
+                  labelAlign="left"
+                  labelCol={{ span: 3, offset: 0 }}
+                  colon={false}
                   validateStatus={!data.dirty && !data.tokenSymbol ? "error" : ""}
                   help={
                     !data.dirty && !data.tokenSymbol
                       ? "Should be combination of numbers & alphabets"
                       : ""
                   }
+                  required
                 >
                   <Input
                     placeholder="token symbol e.g.: PTC"
@@ -244,6 +240,11 @@ const Create = ({ history }) => {
                   />
                 </Form.Item>
                 <Form.Item
+                  label=" "
+                  labelAlign="left"
+                  labelCol={{ span: 3, offset: 0 }}
+                  required
+                  colon={false}
                   validateStatus={!data.dirty && Number(data.tokenName) <= 0 ? "error" : ""}
                   help={
                     !data.dirty && Number(data.tokenName) <= 0
@@ -259,60 +260,82 @@ const Create = ({ history }) => {
                   />
                 </Form.Item>
                 <Form.Item style={{ lineHeight: "0px" }}>
-                  <Dragger
-                    multiple={false}
-                    action="https://www.mocky.io/v2/5cc8019d300000980a055e76"
-                    transformFile={transformFile}
-                    beforeUpload={beforeUpload}
-                    onChange={handleChangeUpload}
-                    onRemove={() => false}
-                    fileList={fileList}
-                    name="documentHashUpload"
-                    style={{
-                      background: "#D3D3D3",
-                      borderRadius: "8px"
-                    }}
-                  >
-                    <Icon style={{ fontSize: "24px" }} type="upload" />
-                    <p>Click or drag file to this area to upload (optional)</p>
-                    <Input
-                      style={{ borderRadius: 0, align: "center" }}
-                      placeholder={"white paper/document hash (optional)"}
-                      name="documentHash"
-                      disabled
-                      value={hash}
-                    />
-                  </Dragger>
-                  {!loading && hash && (
-                    <>
-                      <p style={{ textAlign: "left", marginBottom: "-18px" }}>
-                        White paper/document hash:
-                      </p>
-                      <Paragraph small copyable={{ text: hash }} ellipsis>
-                        {hash}
-                      </Paragraph>
-                    </>
-                  )}
-
                   <Collapse accordion>
                     <Collapse.Panel
-                      header={<>What is white paper/document hash?</>}
-                      key="1"
+                      header={<>Add white paper / document hash...</>}
+                      key="0"
                       style={{ textAlign: "left" }}
                     >
-                      <Paragraph>
-                        The document hash is a sha256 hash of the whitepaper for your token. You can
-                        create a hash of any document, and learn more about its use, at
-                        <strong>
-                          <a
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            href="https://notary.bitcoin.com"
+                      <Dragger
+                        multiple={false}
+                        transformFile={transformFile}
+                        beforeUpload={beforeUpload}
+                        name="documentHashUpload"
+                        style={{
+                          background: "#D3D3D3",
+                          borderRadius: "8px"
+                        }}
+                      >
+                        <Icon style={{ fontSize: "24px" }} type="upload" />
+                        <p>Click, or drag file to this area to hash.</p>
+                        <p style={{ fontSize: "12px" }}>
+                          The hash is performed client-side and the file is not uploaded.
+                        </p>
+                        <Input
+                          style={{ borderRadius: 0, align: "center" }}
+                          placeholder={"white paper/document hash"}
+                          name="documentHash"
+                          disabled
+                          value={hash}
+                        />
+                      </Dragger>
+                      {!loading && hash && (
+                        <>
+                          <Tooltip title={file.name}>
+                            <Paragraph
+                              small
+                              ellipsis
+                              style={{ lineHeight: "normal", textAlign: "center" }}
+                            >
+                              <Icon type="paper-clip" />
+                              {file.name}
+                            </Paragraph>
+                          </Tooltip>
+                          <p style={{ textAlign: "left", marginBottom: "-6px" }}>
+                            White paper/document hash:
+                          </p>
+                          <Paragraph
+                            style={{ marginBottom: "2px" }}
+                            small
+                            copyable={{ text: hash }}
+                            ellipsis
                           >
-                            {` notary.bitcoin.com`}
-                          </a>
-                        </strong>
-                      </Paragraph>
+                            {hash}
+                          </Paragraph>
+                        </>
+                      )}
+
+                      <Collapse accordion>
+                        <Collapse.Panel
+                          header={<>What is white paper/document hash?</>}
+                          key="1"
+                          style={{ textAlign: "left" }}
+                        >
+                          <Paragraph>
+                            The document hash is a sha256 hash of the whitepaper for your token. You
+                            can create a hash of any document, and learn more about its use, at
+                            <strong>
+                              <a
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                href="https://notary.bitcoin.com"
+                              >
+                                {` notary.bitcoin.com`}
+                              </a>
+                            </strong>
+                          </Paragraph>
+                        </Collapse.Panel>
+                      </Collapse>
                     </Collapse.Panel>
                   </Collapse>
                 </Form.Item>
@@ -326,15 +349,24 @@ const Create = ({ history }) => {
                   />
                 </Form.Item>
                 <Form.Item
+                  label=" "
+                  labelAlign="left"
+                  labelCol={{ span: 3, offset: 0 }}
+                  colon={false}
+                  required
                   validateStatus={
-                    (!data.dirty && data.decimals < 0) || (!data.dirty && data.decimals > 9)
+                    (!data.dirty && data.decimals < 0) ||
+                    (!data.dirty && data.decimals > 9) ||
+                    (!data.dirty && data.decimals % 1 !== 0) ||
+                    (!data.dirty && data.decimals === "")
                       ? "error"
                       : ""
                   }
                   help={
                     (!data.dirty && data.decimals < 0) ||
                     (!data.dirty && data.decimals > 9) ||
-                    (!data.dirty && data.decimals % 1 !== 0)
+                    (!data.dirty && data.decimals % 1 !== 0) ||
+                    (!data.dirty && data.decimals === "")
                       ? "Must be an integer between 0 and 9"
                       : ""
                   }
@@ -353,6 +385,11 @@ const Create = ({ history }) => {
                 </Form.Item>
 
                 <Form.Item
+                  label=" "
+                  labelAlign="left"
+                  labelCol={{ span: 3, offset: 0 }}
+                  colon={false}
+                  required
                   validateStatus={!data.dirty && Number(data.amount) <= 0 ? "error" : ""}
                   help={!data.dirty && Number(data.amount) <= 0 ? "Should be greater than 0" : ""}
                 >
