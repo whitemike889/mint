@@ -247,7 +247,9 @@ const PayDividends = ({ SLP, token, onClose }) => {
                     </Col>
                     &nbsp; &nbsp; &nbsp;
                     <Col>
-                      <Tooltip title="Addresses eligible to receive dividends for the specified amount">
+                      <Tooltip
+                        title={`To be eligible, addresses must have an SLP balance such that their proportional share of your dividend payment is greater than ${DUST} BCH`}
+                      >
                         <StyledStat>
                           <Icon type="usergroup-add" />
                           &nbsp;
