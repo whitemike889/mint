@@ -15,6 +15,18 @@ const StyledButtonWrapper = styled.div`
   justify-content: center;
 `;
 
+const StyledBurnAlert = styled.div`
+  .ant-alert.ant-alert-warning.ant-alert-no-icon {
+    margin-bottom: 10px;
+    border: 2px solid #e4454f !important;
+    border-radius: 4px;
+    background-color: #fdf1f0 !important;
+  }
+  .anticon.anticon-warning {
+    color: #f2484c !important;
+  }
+`;
+
 const Burn = ({ token, onClose }) => {
   const ContextValue = React.useContext(WalletContext);
   const { wallet, balances } = ContextValue;
@@ -87,24 +99,34 @@ const Burn = ({ token, onClose }) => {
           >
             <br />
             <Row justify="center" type="flex">
-              <Col>
-                <Alert
-                  style={{ marginBottom: "10px" }}
-                  message={
-                    <span>
-                      <Paragraph>
-                        <Icon type="warning" /> Be careful.
-                      </Paragraph>
-                      <Paragraph>
-                        Burning tokens is <strong>irreversible</strong>.
-                      </Paragraph>
-                      <Paragraph>
-                        <strong>You will LOSE all of your {token.info.name} tokens.</strong>
-                      </Paragraph>
-                    </span>
-                  }
-                  type="warning"
-                />
+              <Col span={24}>
+                <StyledBurnAlert>
+                  <div
+                    style={{
+                      fontSize: "32px",
+                      textAlign: "center",
+                      marginBottom: "-21px",
+                      zIndex: "2",
+                      position: "relative"
+                    }}
+                  >
+                    <Icon twoToneColor="#F34745" theme="twoTone" type="exclamation-circle" />
+                  </div>
+                  <Alert
+                    message={
+                      <span>
+                        <Paragraph>Be careful!</Paragraph>
+                        <Paragraph>
+                          Burning tokens is <strong>irreversible</strong>.
+                        </Paragraph>
+                        <Paragraph>
+                          <strong>You will LOSE all of your {token.info.name} tokens.</strong>
+                        </Paragraph>
+                      </span>
+                    }
+                    type="warning"
+                  />
+                </StyledBurnAlert>
               </Col>
             </Row>
             <Row type="flex">
@@ -118,7 +140,7 @@ const Burn = ({ token, onClose }) => {
                     }
                     help={
                       formData.dirty && formData.textToDelete !== `burn ${token.info.name}`
-                        ? `Please make sure you type "burn ${token.info.name}" before continuing.`
+                        ? `Type "burn ${token.info.name}" to confirm.`
                         : ""
                     }
                   >
