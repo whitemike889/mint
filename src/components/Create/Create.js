@@ -34,7 +34,11 @@ const StyledCard = styled.div`
 `;
 
 const StyledAlert = styled.div`
-  margin-top: 6px;
+  margin-bottom: 8px;
+
+  .ant-alert.ant-alert-info.ant-alert-no-icon.ant-alert-closable {
+    background: #fff;
+  }
   .ant-alert-message {
     font-size: 12px;
 
@@ -413,6 +417,29 @@ const Create = ({ history }) => {
                         key="0"
                         style={{ textAlign: "left" }}
                       >
+                        <StyledAlert>
+                          <Alert
+                            message={
+                              <>
+                                <Icon type="info-circle" /> The document hash is a sha256 hash of
+                                the whitepaper for your token. You can create a hash of any
+                                document, and learn more about its use, at
+                                <strong>
+                                  <a
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    href="https://notary.bitcoin.com"
+                                  >
+                                    {` notary.bitcoin.com`}
+                                  </a>
+                                </strong>
+                                . Click on the input below to hash the file.
+                              </>
+                            }
+                            type="info"
+                            closable
+                          />
+                        </StyledAlert>
                         <Form.Item style={{ lineHeight: "0px" }}>
                           <StyledHashCollapse>
                             <Collapse bordered={false}>
@@ -473,29 +500,6 @@ const Create = ({ history }) => {
                                     </Paragraph>
                                   </>
                                 )}
-
-                                <StyledAlert>
-                                  <Alert
-                                    message={
-                                      <>
-                                        <Icon type="info-circle" /> The document hash is a sha256
-                                        hash of the whitepaper for your token. You can create a hash
-                                        of any document, and learn more about its use, at
-                                        <strong>
-                                          <a
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            href="https://notary.bitcoin.com"
-                                          >
-                                            {` notary.bitcoin.com`}
-                                          </a>
-                                        </strong>
-                                      </>
-                                    }
-                                    type="info"
-                                    closable
-                                  />
-                                </StyledAlert>
                               </Collapse.Panel>
                             </Collapse>
                           </StyledHashCollapse>
