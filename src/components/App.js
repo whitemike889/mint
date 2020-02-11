@@ -5,6 +5,7 @@ import { useSwipeable } from "react-swipeable";
 import { Layout, Menu, Radio } from "antd";
 import Portfolio from "./Portfolio/Portfolio";
 import Create from "./Create/Create";
+import Dividends from "./Dividends/Dividends";
 import Configure from "./Configure/Configure";
 import Audit from "./Audit/Audit";
 import NotFound from "./NotFound";
@@ -40,8 +41,10 @@ const App = () => {
       case "1":
         return <Create />;
       case "2":
-        return <Configure />;
+        return <Dividends />;
       case "3":
+        return <Configure />;
+      case "4":
         return <Audit />;
       default:
         return <NotFound />;
@@ -129,19 +132,24 @@ const App = () => {
                       <span>Create</span>
                     </Menu.Item>
                   )}
-                  <Menu.Item key="2">
+                  {wallet && (
+                    <Menu.Item key="2">
+                      <span>Dividends</span>
+                    </Menu.Item>
+                  )}
+                  <Menu.Item key="3">
                     <span>Configure</span>
                   </Menu.Item>
-                  <Menu.Item key="3">
+                  <Menu.Item key="4">
                     <span>Audit</span>
                   </Menu.Item>
-                  <Menu.SubMenu key="4" title={<span>Links</span>}>
-                    <Menu.Item key="5">
+                  <Menu.SubMenu key="5" title={<span>Links</span>}>
+                    <Menu.Item key="6">
                       <a href="https://free.bitcoin.com/" target="_blank" rel="noopener noreferrer">
                         Faucet (Free BCH)
                       </a>
                     </Menu.Item>
-                    <Menu.Item key="6">
+                    <Menu.Item key="7">
                       <a
                         href="https://exchange.bitcoin.com/"
                         target="_blank"
@@ -150,7 +158,7 @@ const App = () => {
                         Exchange
                       </a>
                     </Menu.Item>
-                    <Menu.Item key="7">
+                    <Menu.Item key="8">
                       {" "}
                       <a
                         href="https://cashgames.bitcoin.com/home"
@@ -160,7 +168,7 @@ const App = () => {
                         Games
                       </a>
                     </Menu.Item>
-                    <Menu.Item key="8">
+                    <Menu.Item key="9">
                       {" "}
                       <a href="https://local.bitcoin.com" target="_blank" rel="noopener noreferrer">
                         Trade Locally
