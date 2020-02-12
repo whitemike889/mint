@@ -80,7 +80,6 @@ export default () => {
 
     setLoadingTokenHistory(false);
   };
-  console.log("tokens :", tokens.filter(element => element.balance && element.balance.gt(0)));
 
   const handleChangeAction = (e, tokenId) => {
     setAction(null);

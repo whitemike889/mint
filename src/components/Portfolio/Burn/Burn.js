@@ -115,34 +115,33 @@ const Burn = ({ token, avatar, onClose }) => {
           duration: 3
         });
       } else if (hasBalance && hasBaton && formData.burnBaton === true) {
-        link = await Promise.all([
-          broadcastTransaction(wallet, {
-            tokenId: token.tokenId,
-            amount: Number.parseFloat(formData.amount)
-          }),
-          broadcastTransaction(wallet, {
-            tokenId: token.tokenId,
-            additionalTokenQty: 0,
-            batonReceiverAddress: null,
-            burnBaton: true
-          })
-        ]);
-
-        notification.success({
-          message: "Success",
-          description: (
-            <a href={link[0]} target="_blank" rel="noopener noreferrer">
-              <Paragraph>Tokens burned. Click or tap here for more details</Paragraph>
-            </a>
-          ),
-          duration: 3
+        link = await broadcastTransaction(wallet, {
+          tokenId: token.tokenId,
+          additionalTokenQty: 0,
+          batonReceiverAddress: null,
+          burnBaton: true
         });
 
         notification.success({
           message: "Success",
           description: (
-            <a href={link[1]} target="_blank" rel="noopener noreferrer">
+            <a href={link} target="_blank" rel="noopener noreferrer">
               <Paragraph>Burn baton successful. Click or tap here for more details</Paragraph>
+            </a>
+          ),
+          duration: 3
+        });
+
+        link = await broadcastTransaction(wallet, {
+          tokenId: token.tokenId,
+          amount: Number.parseFloat(formData.amount)
+        });
+
+        notification.success({
+          message: "Success",
+          description: (
+            <a href={link} target="_blank" rel="noopener noreferrer">
+              <Paragraph>Tokens burned. Click or tap here for more details</Paragraph>
             </a>
           ),
           duration: 3
