@@ -1,5 +1,18 @@
 import React, { useState } from "react";
-import { Row, Col, Icon, Avatar, Empty, Alert, notification, Radio, Spin } from "antd";
+import styled from "styled-components";
+import {
+  Row,
+  Col,
+  Icon,
+  Avatar,
+  Empty,
+  Alert,
+  notification,
+  Radio,
+  Spin,
+  Collapse,
+  Switch
+} from "antd";
 import { EnhancedCard } from "./EnhancedCard";
 import { WalletContext } from "../../utils/context";
 import { Meta } from "antd/lib/list/Item";
@@ -15,7 +28,27 @@ import Paragraph from "antd/lib/typography/Paragraph";
 import { OnBoarding } from "../OnBoarding/OnBoarding";
 import getTokenTransactionHistory from "../../utils/getTokenTransactionHistory";
 import bchFlagLogo from "../../assets/4-bitcoin-cash-logo-flag.png";
-import broadcastTransaction from "../../utils/broadcastTransaction";
+
+export const StyledCollapse = styled(Collapse)`
+  background: #fbfcfd !important;
+  border: 1px solid #eaedf3 !important;
+  margin-top: 12px !important;
+  .ant-collapse-content {
+    border: 1px solid #eaedf3;
+    border-top: none;
+  }
+
+  .ant-collapse-item {
+    border-bottom: none !important;
+  }
+  .ant-collapse-header {
+    color: rgb(62, 63, 66) !important;
+  }
+  .ant-typography {
+    color: rgb(62, 63, 66);
+    font-weight: bold;
+  }
+`;
 
 export default () => {
   const ContextValue = React.useContext(WalletContext);
@@ -28,6 +61,7 @@ export default () => {
   const [tokenCardAction, setTokenCardAction] = useState("details");
   const [history, setHistory] = useState(null);
   const [outerAction, setOuterAction] = useState(false);
+  const [showArchivedTokens, setShowArchivedTokens] = useState(false);
   const getTokenHistory = async tokenInfo => {
     setLoadingTokenHistory(true);
     try {
@@ -46,6 +80,7 @@ export default () => {
 
     setLoadingTokenHistory(false);
   };
+  console.log("tokens :", tokens.filter(element => element.balance && element.balance.gt(0)));
 
   const handleChangeAction = (e, tokenId) => {
     setAction(null);
@@ -119,13 +154,14 @@ export default () => {
   const renderBurnAction = tokenCardAction => {
     if (tokenCardAction) {
       return (
-        <FireIcon
-          style={{ position: "absolute", top: "50%", right: "13px" }}
+        <Paragraph
           onClick={() => {
             setAction("burn");
-            setTokenCardAction(tokenCardAction !== null ? null : tokenCardAction);
+            setTokenCardAction(null);
           }}
-        />
+        >
+          <FireIcon style={{ marginBottom: "4px" }} /> Open Burn Token Options
+        </Paragraph>
       );
     }
 
@@ -215,236 +251,274 @@ export default () => {
           ))
         : null}
       {tokens.length
-        ? tokens.map(token => (
-            <Col
-              style={{ marginTop: "8px" }}
-              xl={8}
-              lg={12}
-              sm={12}
-              span={24}
-              key={`col-${token.tokenId}`}
-            >
-              <EnhancedCard
-                token={token}
-                loading={!token.info}
-                expand={selectedToken && token.tokenId === selectedToken.tokenId}
-                onClick={() =>
-                  setSelectedToken(
-                    !selectedToken || token.tokenId !== selectedToken.tokenId ? token : null
-                  )
-                }
-                key={`card-${token.tokenId}`}
-                style={{ marginTop: "8px", textAlign: "left" }}
-                onClose={onClose}
-                actions={renderActions(action, setAction, token)}
-                renderExpanded={() => (
-                  <Spin spinning={loadingTokenHistory}>
-                    <Radio.Group
-                      defaultValue="details"
-                      onChange={e => handleChangeAction(e, selectedToken.tokenId)}
-                      value={tokenCardAction}
-                      style={{
-                        width: "100%",
-                        textAlign: "center",
-                        marginTop: "0px",
-                        marginBottom: "18px"
-                      }}
-                      size="small"
-                      buttonStyle="solid"
-                    >
-                      <Radio.Button
-                        style={{
-                          borderRadius: "19.5px",
-                          height: "40px",
-                          width: "50%",
-                          fontSize: "16px"
-                        }}
-                        value="details"
-                        onClick={e => handleChangeAction(e, selectedToken.tokenId)}
-                      >
-                        <Icon style={{ color: "#fff" }} type="info-circle" /> Details
-                      </Radio.Button>
-                      <Radio.Button
-                        style={{
-                          borderRadius: "19.5px",
-                          height: "40px",
-                          width: "50%",
-                          fontSize: "16px"
-                        }}
-                        value="history"
-                        onClick={e => handleChangeAction(e, selectedToken.tokenId)}
-                      >
-                        <Icon style={{ color: "#fff" }} type="history" /> History
-                      </Radio.Button>
-                    </Radio.Group>
-                    {!loadingTokenHistory &&
-                    selectedToken &&
-                    token.tokenId === selectedToken.tokenId &&
-                    tokenCardAction === "details" ? (
-                      <Alert
-                        message={
-                          <div>
-                            <Paragraph>
-                              <Icon type="info-circle" /> &nbsp; Token properties
-                            </Paragraph>
-                            {Object.entries(token.info || {}).map(entry => (
-                              <Paragraph
-                                key={`paragraph-${token.tokenId}-${entry[0]}`}
-                                small
-                                copyable={{ text: entry[1] }}
-                                ellipsis
-                                style={{ whiteSpace: "nowrap", maxWidth: "100%" }}
-                              >
-                                {entry[0]}: {entry[1]}
-                              </Paragraph>
-                            ))}
-                          </div>
-                        }
-                        type="warning"
-                        style={{ marginTop: 4 }}
-                      />
-                    ) : null}
-
-                    {!loadingTokenHistory &&
-                    selectedToken &&
-                    token.tokenId === selectedToken.tokenId &&
-                    tokenCardAction === "history" ? (
-                      <>
-                        <p>Transaction History (max 30)</p>
-                        {history.map(el => (
-                          <div
-                            key={`history-${el.txid}`}
-                            style={{
-                              background: el.balance > 0 ? "#D4EFFC" : " #ffd59a",
-                              color: "black",
-                              borderRadius: "12px",
-                              marginBottom: "18px",
-                              padding: "8px",
-                              boxShadow: "6px 6px #888888",
-                              width: "97%"
-                            }}
-                          >
-                            <a
-                              href={`https://explorer.bitcoin.com/bch/tx/${el.txid}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <p>
-                                {el.balance > 0
-                                  ? el.detail.transactionType === "GENESIS"
-                                    ? "Genesis"
-                                    : el.detail.transactionType === "MINT"
-                                    ? "Mint"
-                                    : "Received"
-                                  : "Sent"}
-                              </p>
-                              <p>{el.date.toLocaleString()}</p>
-
-                              <p>{`${el.balance > 0 ? "+" : ""}${el.balance} ${
-                                el.detail.symbol
-                              }`}</p>
-
-                              <Paragraph
-                                small
-                                ellipsis
-                                style={{ whiteSpace: "nowrap", color: "black", maxWidth: "90%" }}
-                              >
-                                {el.txid}
-                              </Paragraph>
-                              <p>{`Confirmations: ${el.confirmations}`}</p>
-                            </a>
-                          </div>
-                        ))}
-                        <a
-                          href={`https://explorer.bitcoin.com/bch/address/${wallet.Path245.slpAddress}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <p>Full History</p>
-                        </a>
-                      </>
-                    ) : null}
-
-                    {selectedToken && action === "mint" && tokenCardAction === null ? (
-                      <Mint token={selectedToken} onClose={onClose} />
-                    ) : null}
-                    {selectedToken && action === "transfer" && tokenCardAction === null ? (
-                      <Transfer token={selectedToken} onClose={onClose} />
-                    ) : null}
-                    {selectedToken && action === "dividends" && tokenCardAction === null ? (
-                      <PayDividends token={selectedToken} onClose={onClose} />
-                    ) : null}
-                    {selectedToken && action === "burn" && tokenCardAction === null ? (
-                      <Burn token={selectedToken} onClose={onClose} />
-                    ) : null}
-                  </Spin>
-                )}
+        ? tokens
+            .filter(
+              element =>
+                (!showArchivedTokens && element.balance && element.balance.gt(0)) ||
+                showArchivedTokens
+            )
+            .map(token => (
+              <Col
+                style={{ marginTop: "8px" }}
+                xl={8}
+                lg={12}
+                sm={12}
+                span={24}
+                key={`col-${token.tokenId}`}
               >
-                <Meta
-                  avatar={
-                    <Img
-                      src={`${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`}
-                      unloader={
-                        <img
-                          alt={`identicon of tokenId ${token.tokenId} `}
-                          heigh="60"
-                          width="60"
-                          style={{ borderRadius: "50%" }}
-                          key={`identicon-${token.tokenId}`}
-                          src={makeBlockie(token.tokenId)}
+                <EnhancedCard
+                  token={token}
+                  loading={!token.info}
+                  expand={selectedToken && token.tokenId === selectedToken.tokenId}
+                  onClick={() =>
+                    setSelectedToken(
+                      !selectedToken || token.tokenId !== selectedToken.tokenId ? token : null
+                    )
+                  }
+                  key={`card-${token.tokenId}`}
+                  style={{ marginTop: "8px", textAlign: "left" }}
+                  onClose={onClose}
+                  actions={renderActions(action, setAction, token)}
+                  renderExpanded={() => (
+                    <Spin spinning={loadingTokenHistory}>
+                      <Radio.Group
+                        defaultValue="details"
+                        onChange={e => handleChangeAction(e, selectedToken.tokenId)}
+                        value={tokenCardAction}
+                        style={{
+                          width: "100%",
+                          textAlign: "center",
+                          marginTop: "0px",
+                          marginBottom: "18px"
+                        }}
+                        size="small"
+                        buttonStyle="solid"
+                      >
+                        <Radio.Button
+                          style={{
+                            borderRadius: "19.5px",
+                            height: "40px",
+                            width: "50%",
+                            fontSize: "16px"
+                          }}
+                          value="details"
+                          onClick={e => handleChangeAction(e, selectedToken.tokenId)}
+                        >
+                          <Icon style={{ color: "#fff" }} type="info-circle" /> Details
+                        </Radio.Button>
+                        <Radio.Button
+                          style={{
+                            borderRadius: "19.5px",
+                            height: "40px",
+                            width: "50%",
+                            fontSize: "16px"
+                          }}
+                          value="history"
+                          onClick={e => handleChangeAction(e, selectedToken.tokenId)}
+                        >
+                          <Icon style={{ color: "#fff" }} type="history" /> History
+                        </Radio.Button>
+                      </Radio.Group>
+                      {!loadingTokenHistory &&
+                      selectedToken &&
+                      token.tokenId === selectedToken.tokenId &&
+                      tokenCardAction === "details" ? (
+                        <>
+                          <Alert
+                            message={
+                              <div>
+                                <Paragraph>
+                                  <Icon type="info-circle" /> &nbsp; Token properties
+                                </Paragraph>
+                                {Object.entries(token.info || {}).map(entry => (
+                                  <Paragraph
+                                    key={`paragraph-${token.tokenId}-${entry[0]}`}
+                                    small
+                                    copyable={{ text: entry[1] }}
+                                    ellipsis
+                                    style={{ whiteSpace: "nowrap", maxWidth: "100%" }}
+                                  >
+                                    {entry[0]}: {entry[1]}
+                                  </Paragraph>
+                                ))}
+                              </div>
+                            }
+                            type="warning"
+                            style={{ marginTop: 4 }}
+                          />
+
+                          <StyledCollapse>
+                            <Collapse.Panel header="Advanced options">
+                              {renderBurnAction("details")}
+                            </Collapse.Panel>
+                          </StyledCollapse>
+                        </>
+                      ) : null}
+
+                      {!loadingTokenHistory &&
+                      selectedToken &&
+                      token.tokenId === selectedToken.tokenId &&
+                      tokenCardAction === "history" ? (
+                        <>
+                          <p>Transaction History (max 30)</p>
+                          {history.map(el => (
+                            <div
+                              key={`history-${el.txid}`}
+                              style={{
+                                background: el.balance > 0 ? "#D4EFFC" : " #ffd59a",
+                                color: "black",
+                                borderRadius: "12px",
+                                marginBottom: "18px",
+                                padding: "8px",
+                                boxShadow: "6px 6px #888888",
+                                width: "97%"
+                              }}
+                            >
+                              <a
+                                href={`https://explorer.bitcoin.com/bch/tx/${el.txid}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <p>
+                                  {el.balance > 0
+                                    ? el.detail.transactionType === "GENESIS"
+                                      ? "Genesis"
+                                      : el.detail.transactionType === "MINT"
+                                      ? "Mint"
+                                      : "Received"
+                                    : "Sent"}
+                                </p>
+                                <p>{el.date.toLocaleString()}</p>
+
+                                <p>{`${el.balance > 0 ? "+" : ""}${el.balance} ${
+                                  el.detail.symbol
+                                }`}</p>
+
+                                <Paragraph
+                                  small
+                                  ellipsis
+                                  style={{ whiteSpace: "nowrap", color: "black", maxWidth: "90%" }}
+                                >
+                                  {el.txid}
+                                </Paragraph>
+                                <p>{`Confirmations: ${el.confirmations}`}</p>
+                              </a>
+                            </div>
+                          ))}
+                          <a
+                            href={`https://explorer.bitcoin.com/bch/address/${wallet.Path245.slpAddress}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <p>Full History</p>
+                          </a>
+                        </>
+                      ) : null}
+
+                      {selectedToken && action === "mint" && tokenCardAction === null ? (
+                        <Mint token={selectedToken} onClose={onClose} />
+                      ) : null}
+                      {selectedToken && action === "transfer" && tokenCardAction === null ? (
+                        <Transfer token={selectedToken} onClose={onClose} />
+                      ) : null}
+                      {selectedToken && action === "dividends" && tokenCardAction === null ? (
+                        <PayDividends token={selectedToken} onClose={onClose} />
+                      ) : null}
+                      {selectedToken && action === "burn" && tokenCardAction === null ? (
+                        <Burn
+                          token={selectedToken}
+                          avatar={
+                            <Img
+                              heigh={16}
+                              width={16}
+                              src={`${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`}
+                              unloader={
+                                <img
+                                  alt=""
+                                  heigh={16}
+                                  width={16}
+                                  style={{ borderRadius: "50%" }}
+                                  src={makeBlockie(token.tokenId)}
+                                />
+                              }
+                            />
+                          }
+                          onClose={onClose}
                         />
-                      }
-                    />
-                  }
-                  title={
-                    <div
-                      style={{
-                        float: "right"
-                      }}
-                    >
+                      ) : null}
+                    </Spin>
+                  )}
+                >
+                  <Meta
+                    avatar={
+                      <Img
+                        src={`${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`}
+                        unloader={
+                          <img
+                            alt={`identicon of tokenId ${token.tokenId} `}
+                            heigh="60"
+                            width="60"
+                            style={{ borderRadius: "50%" }}
+                            key={`identicon-${token.tokenId}`}
+                            src={makeBlockie(token.tokenId)}
+                          />
+                        }
+                      />
+                    }
+                    title={
                       <div
                         style={{
-                          fontSize: "16px",
-                          fontWeight: "bold",
-                          color: "rgb(62, 63, 66)"
+                          float: "right"
                         }}
                       >
-                        {token.info && token.info.symbol.toUpperCase()}
+                        <div
+                          style={{
+                            fontSize: "16px",
+                            fontWeight: "bold",
+                            color: "rgb(62, 63, 66)"
+                          }}
+                        >
+                          {token.info && token.info.symbol.toUpperCase()}
+                        </div>
+                        <div
+                          style={{
+                            color: "rgb(158, 160, 165)",
+                            fontSize: "12px",
+                            fontWeight: "500",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: "210px"
+                          }}
+                        >
+                          {token.info && token.info.name}
+                        </div>
+                        {/* {renderBurnAction(tokenCardAction)} */}
                       </div>
-                      <div
-                        style={{
-                          color: "rgb(158, 160, 165)",
-                          fontSize: "12px",
-                          fontWeight: "500",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          maxWidth: "210px"
-                        }}
-                      >
-                        {token.info && token.info.name}
+                    }
+                    description={
+                      <div>
+                        <div
+                          style={{
+                            color: "rgb(62, 63, 66)",
+                            fontSize: "16px",
+                            fontWeight: "bold"
+                          }}
+                        >
+                          {token.balance >= 0 ? token.balance.toString() : ""}
+                        </div>
                       </div>
-                      {renderBurnAction(tokenCardAction)}
-                    </div>
-                  }
-                  description={
-                    <div>
-                      <div
-                        style={{
-                          color: "rgb(62, 63, 66)",
-                          fontSize: "16px",
-                          fontWeight: "bold"
-                        }}
-                      >
-                        {token.balance >= 0 ? token.balance.toString() : ""}
-                      </div>
-                    </div>
-                  }
-                />
-              </EnhancedCard>
-            </Col>
-          ))
+                    }
+                  />
+                </EnhancedCard>
+              </Col>
+            ))
         : null}
+      {tokens.length && (
+        <Col span={24} style={{ textAlign: "left", marginTop: "12px", color: "rgb(62, 63, 66)" }}>
+          <Switch onChange={checked => setShowArchivedTokens(checked)} /> Show Archived Tokens
+        </Col>
+      )}
       <Col span={24} style={{ marginTop: "8px" }}>
         {!loading && !tokens.length && wallet ? <Empty description="No tokens found" /> : null}
         {!loading && !tokens.length && !wallet ? <OnBoarding /> : null}

@@ -5,7 +5,7 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
     const NETWORK = process.env.REACT_APP_NETWORK;
 
     const TRANSACTION_TYPE =
-      (args.additionalTokenQty && args.tokenId && "IS_MINTING") ||
+      ((args.additionalTokenQty || args.burnBaton) && args.tokenId && "IS_MINTING") ||
       (args.initialTokenQty && args.symbol && args.name && "IS_CREATING") ||
       (args.amount && args.tokenId && args.tokenReceiverAddress && "IS_SENDING") ||
       (args.amount && args.tokenId && "IS_BURNING");

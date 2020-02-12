@@ -58,14 +58,13 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
   try {
     const calculateTransactionBalance = vout => {
       const isDividends = isBchDividens(vout);
-
       if (isDividends) {
         if (
           vout.length > 2 &&
           cashAddresses.includes(
             SLP.Address.toCashAddress(vout[vout.length - 1].scriptPubKey.addresses[0])
           )
-        )
+        ) {
           return {
             balance:
               vout
@@ -80,6 +79,8 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
 
             metaData: isDividends
           };
+        }
+
         if (
           vout.length > 2 &&
           vout
@@ -87,7 +88,7 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
             .findIndex(element =>
               cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
             ) !== -1
-        )
+        ) {
           return {
             balance: vout
               .slice(1, vout.length - 1)
@@ -108,23 +109,56 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
               })),
             metaData: isDividends
           };
+        }
+
+        if (
+          vout.length > 1 &&
+          vout
+            .slice(1, vout.length)
+            .findIndex(element =>
+              cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
+            ) === -1
+        ) {
+          return {
+            balance:
+              vout
+                .slice(1, vout.length)
+                .map(el => +el.value)
+                .reduce((a, b) => a + b, 0) * -1,
+            type: "MintDividend Sent",
+            outputs: vout.slice(1, vout.length).map(el => ({
+              address: SLP.Address.toCashAddress(el.scriptPubKey.addresses[0]),
+              amount: +el.value * -1
+            })),
+            metaData: isDividends
+          };
+        }
+
+        return {
+          balance: null,
+          type: "Unknown"
+        };
       } else if (!hasOpReturn(vout)) {
         if (
           vout.length === 1 &&
           cashAddresses.includes(SLP.Address.toCashAddress(vout[0].scriptPubKey.addresses[0]))
-        )
+        ) {
           return { balance: +vout[0].value, type: "Received" };
+        }
+
         if (
           vout.length === 1 &&
           !cashAddresses.includes(SLP.Address.toCashAddress(vout[0].scriptPubKey.addresses[0]))
-        )
+        ) {
           return { balance: +vout[0].value * -1, type: "Sent" };
+        }
+
         if (
           vout.length > 1 &&
           cashAddresses.includes(
             SLP.Address.toCashAddress(vout[vout.length - 1].scriptPubKey.addresses[0])
           )
-        )
+        ) {
           return {
             balance:
               vout
@@ -133,18 +167,44 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
                 .reduce((a, b) => a + b, 0) * -1,
             type: "Sent"
           };
+        }
+
+        if (
+          vout.length > 1 &&
+          vout
+            .slice(0, vout.length - 1)
+            .findIndex(element =>
+              cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
+            ) !== -1
+        ) {
+          return {
+            balance: vout
+              .slice(0, vout.length - 1)
+              .filter(element =>
+                cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
+              )
+              .map(el => +el.value)
+              .reduce((a, b) => a + b, 0),
+            type: "Received"
+          };
+        }
+
         if (
           vout.length > 1 &&
           vout.findIndex(element =>
             cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
-          ) !== -1
-        )
+          ) === -1
+        ) {
           return {
-            balance: +vout.find(element =>
-              cashAddresses.includes(SLP.Address.toCashAddress(element.scriptPubKey.addresses[0]))
-            ).value,
-            type: "Received"
+            balance: vout.map(element => +element.value).reduce((a, b) => a + b, 0) * -1,
+            type: "Sent"
           };
+        }
+
+        return {
+          balance: null,
+          type: "Unknown"
+        };
       } else {
         return {
           balance: null,
@@ -231,7 +291,6 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
 
     const { unconfirmed, confirmed } = transactionHistory;
     const history = unconfirmed.concat(confirmed);
-
     return {
       bchTransactions: history,
       wallets: nonZeroIndexes.map(el => cashAddresses[el])
