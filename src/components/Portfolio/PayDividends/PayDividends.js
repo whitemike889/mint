@@ -97,55 +97,25 @@ const PayDividends = ({ SLP, token, onClose }) => {
     setLoading(true);
     const { amount } = formData;
     try {
-      const link = await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, advancedOptions, {
+      await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, advancedOptions, {
         value: amount,
-        tokenId: token.tokenId
+        token
       });
-
-      if (!link) {
-        setLoading(false);
-
-        return notification.info({
-          message: "Info",
-          description: (
-            <Paragraph>No token holder with sufficient balance to receive dividends.</Paragraph>
-          ),
-          duration: 2
-        });
-      }
 
       notification.success({
         message: "Success",
-        description: (
-          <a href={link} target="_blank" rel="noopener noreferrer">
-            <Paragraph>Transaction successful. Click or tap here for more details</Paragraph>
-          </a>
-        ),
+        description: <Paragraph>Dividend payment successfully scheduled.</Paragraph>,
         duration: 2
       });
 
       setLoading(false);
       onClose();
     } catch (e) {
-      let message;
-
-      if (/don't have the minting baton/.test(e.message)) {
-        message = e.message;
-      } else if (/Invalid BCH address/.test(e.message)) {
-        message = "Invalid BCH address";
-      } else if (/64: dust/.test(e.message)) {
-        message = "Small amount";
-      } else if (/Balance 0/.test(e.message)) {
-        message = "Balance of sending address is zero";
-      } else if (/Insufficient funds/.test(e.message)) {
-        message = "Insufficient funds.";
-      } else {
-        message = e.message;
-      }
-
-      notification.error({
+      notification.success({
         message: "Error",
-        description: message,
+        description: (
+          <Paragraph>Unable to schedule dividend payment. Please, try again later.</Paragraph>
+        ),
         duration: 2
       });
       console.error(e.message);

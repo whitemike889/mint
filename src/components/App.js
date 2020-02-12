@@ -13,19 +13,20 @@ import { WalletContext } from "../utils/context";
 import logo from "../assets/logo.png";
 import { BrowserRouter as Router } from "react-router-dom";
 import { QRCode } from "./Common/QRCode";
+import DividendHistory from "./DividendHistory/DividendHistory";
 
 const { Header, Content, Sider } = Layout;
 
 const App = () => {
   const [collapsed, setCollapsed] = React.useState(window.innerWidth < 768);
   const [mobile, setMobile] = React.useState(false);
-  const [key, setKey] = React.useState("0");
+  const [key, setKey] = React.useState("portfolio");
   const [address, setAddress] = React.useState("slpAddress");
   const ContextValue = React.useContext(WalletContext);
   const { wallet } = ContextValue;
   const radio = React.useRef(null);
   const handleChange = e => {
-    if (e.key < 4) setKey(e.key);
+    if (e.key && !e.key.includes("link-")) setKey(e.key);
     setTimeout(() => mobile && setCollapsed(true), 100);
   };
 
@@ -35,14 +36,16 @@ const App = () => {
 
   const route = () => {
     switch (key) {
-      case "0":
+      case "portfolio":
         return <Portfolio />;
-      case "1":
+      case "create":
         return <Create />;
-      case "2":
+      case "configure":
         return <Configure />;
-      case "3":
+      case "audit":
         return <Audit />;
+      case "dividend-history":
+        return <DividendHistory />;
       default:
         return <NotFound />;
     }
@@ -117,31 +120,34 @@ const App = () => {
                 theme="dark"
                 selectedKeys={[key]}
                 onClick={e => handleChange(e)}
-                defaultSelectedKeys={["1"]}
+                defaultSelectedKeys={["portfolio"]}
                 style={{ textAlign: "left" }}
               >
                 <Menu.ItemGroup style={{ marginTop: "0px" }} key="menu" title="MENU">
-                  <Menu.Item key="0">
+                  <Menu.Item key="portfolio">
                     <span>Portfolio</span>
                   </Menu.Item>
                   {wallet && (
-                    <Menu.Item key="1">
+                    <Menu.Item key="create">
                       <span>Create</span>
                     </Menu.Item>
                   )}
-                  <Menu.Item key="2">
+                  <Menu.Item key="dividend-history">
+                    <span>Dividend History</span>
+                  </Menu.Item>
+                  <Menu.Item key="configure">
                     <span>Configure</span>
                   </Menu.Item>
-                  <Menu.Item key="3">
+                  <Menu.Item key="audit">
                     <span>Audit</span>
                   </Menu.Item>
-                  <Menu.SubMenu key="4" title={<span>Links</span>}>
-                    <Menu.Item key="5">
+                  <Menu.SubMenu key="links" title={<span>Links</span>}>
+                    <Menu.Item key="link-faucet">
                       <a href="https://free.bitcoin.com/" target="_blank" rel="noopener noreferrer">
                         Faucet (Free BCH)
                       </a>
                     </Menu.Item>
-                    <Menu.Item key="6">
+                    <Menu.Item key="link-exchange">
                       <a
                         href="https://exchange.bitcoin.com/"
                         target="_blank"
@@ -150,7 +156,7 @@ const App = () => {
                         Exchange
                       </a>
                     </Menu.Item>
-                    <Menu.Item key="7">
+                    <Menu.Item key="link-games">
                       {" "}
                       <a
                         href="https://cashgames.bitcoin.com/home"
@@ -160,7 +166,7 @@ const App = () => {
                         Games
                       </a>
                     </Menu.Item>
-                    <Menu.Item key="8">
+                    <Menu.Item key="link-trade-locally">
                       {" "}
                       <a href="https://local.bitcoin.com" target="_blank" rel="noopener noreferrer">
                         Trade Locally

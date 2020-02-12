@@ -15,14 +15,14 @@ import Paragraph from "antd/lib/typography/Paragraph";
 import { OnBoarding } from "../OnBoarding/OnBoarding";
 import getTokenTransactionHistory from "../../utils/getTokenTransactionHistory";
 import bchFlagLogo from "../../assets/4-bitcoin-cash-logo-flag.png";
-import broadcastTransaction from "../../utils/broadcastTransaction";
+
+export const SLP_TOKEN_ICONS_URL = "https://tokens.bch.sx/64";
 
 export default () => {
   const ContextValue = React.useContext(WalletContext);
   const { wallet, tokens, loading, balances } = ContextValue;
   const [selectedToken, setSelectedToken] = useState(null);
   const [action, setAction] = useState(null);
-  const SLP_TOKEN_ICONS_URL = "https://tokens.bch.sx/64";
 
   const [loadingTokenHistory, setLoadingTokenHistory] = useState(false);
   const [tokenCardAction, setTokenCardAction] = useState("details");

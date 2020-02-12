@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { notification } from "antd";
 import Big from "big.js";
@@ -9,6 +9,7 @@ import useAsyncTimeout from "./useAsyncTimeout";
 import usePrevious from "./usePrevious";
 import withSLP from "./withSLP";
 import getSlpBanlancesAndUtxos from "./getSlpBanlancesAndUtxos";
+import DividendsManager from "./dividends/dividends-manager";
 
 const normalizeSlpBalancesAndUtxos = (SLP, slpBalancesAndUtxos, wallet) => {
   slpBalancesAndUtxos.nonSlpUtxos.forEach(utxo => {
@@ -81,13 +82,20 @@ export const useWallet = () => {
     });
   }
 
+  const updateDividends = useCallback(
+    ({ wallet }) => DividendsManager.update({ wallet, utxos: slpBalancesAndUtxos.nonSlpUtxos }),
+    [slpBalancesAndUtxos]
+  );
+
   useAsyncTimeout(() => {
+    const wallet = getWallet();
     update({
-      wallet: getWallet(),
+      wallet,
       setWalletState
     }).finally(() => {
       setLoading(false);
     });
+    updateDividends({ wallet });
   }, 5000);
 
   return {

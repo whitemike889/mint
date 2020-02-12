@@ -1,15 +1,17 @@
 import Big from "big.js";
 import withSLP from "./withSLP";
-import { sendBch, SATOSHIS_PER_BYTE } from "./sendBch";
+import { SATOSHIS_PER_BYTE } from "./sendBch";
+import Dividends from "./dividends/dividends";
 
 export const DUST = 0.00005;
 
 export const getEncodedOpReturnMessage = withSLP((SLP, opReturnMessage = "", tokenId) => {
-  const fullOpReturnMessage = `${tokenId} MintDividend${
-    opReturnMessage ? `: ${opReturnMessage}` : ""
-  }`;
-  const buf = Buffer.from(fullOpReturnMessage, "ascii");
-  return SLP.Script.encodeNullDataOutput(buf);
+  const decodedOpReturn = `${tokenId} MintDividend${opReturnMessage ? `: ${opReturnMessage}` : ""}`;
+  const buf = Buffer.from(decodedOpReturn, "ascii");
+  return {
+    encodedOpReturn: SLP.Script.encodeNullDataOutput(buf),
+    decodedOpReturn
+  };
 });
 
 export const getBalancesForToken = withSLP(async (SLP, tokenId) => {
@@ -63,7 +65,10 @@ export const getEligibleAddresses = withSLP(
       { P2PKH: addresses.length + 2 }
     );
 
-    const encodedOpReturn = getEncodedOpReturnMessage(advancedOptions.opReturnMessage, tokenId);
+    const { encodedOpReturn, decodedOpReturn } = getEncodedOpReturnMessage(
+      advancedOptions.opReturnMessage,
+      tokenId
+    );
     const txFee = SLP.BitcoinCash.toBitcoinCash(
       Math.floor(SATOSHIS_PER_BYTE * (byteCount + encodedOpReturn.length)).toFixed(8)
     );
@@ -72,26 +77,31 @@ export const getEligibleAddresses = withSLP(
       addresses,
       values,
       txFee,
-      encodedOpReturn
+      encodedOpReturn,
+      decodedOpReturn
     };
   }
 );
 
-export const sendDividends = async (wallet, utxos, advancedOptions, { value, tokenId }) => {
-  const outputs = await getBalancesForToken(tokenId);
+export const sendDividends = async (wallet, utxos, advancedOptions, { value, token }) => {
+  const outputs = await getBalancesForToken(token.tokenId);
 
-  const { addresses, values, encodedOpReturn } = getEligibleAddresses(
+  const { addresses, values } = getEligibleAddresses(
     wallet,
     outputs,
     value,
     utxos,
     advancedOptions,
-    tokenId
+    token.tokenId
   );
 
-  return await sendBch(wallet, utxos, {
-    addresses,
+  const dividend = new Dividends({
+    token,
+    recipients: addresses,
+    totalValue: value,
     values,
-    encodedOpReturn
+    opReturn: advancedOptions.opReturnMessage
   });
+
+  Dividends.save(dividend);
 };
