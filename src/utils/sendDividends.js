@@ -59,19 +59,20 @@ export const getEligibleAddresses = withSLP(
       values.push(eligibleValue);
       addresses.push(eligibleBalance.slpAddress);
     });
-
-    const byteCount = SLP.BitcoinCash.getByteCount(
-      { P2PKH: utxos.length },
-      { P2PKH: addresses.length + 2 }
-    );
-
     const { encodedOpReturn, decodedOpReturn } = getEncodedOpReturnMessage(
       advancedOptions.opReturnMessage,
       tokenId
     );
-    const txFee = SLP.BitcoinCash.toBitcoinCash(
-      Math.floor(SATOSHIS_PER_BYTE * (byteCount + encodedOpReturn.length)).toFixed(8)
-    );
+    let txFee = 0;
+    for (let i = 0; i < addresses.length; i += Dividends.BATCH_SIZE) {
+      const byteCount = SLP.BitcoinCash.getByteCount(
+        { P2PKH: utxos.length },
+        { P2PKH: addresses.slice(i, Dividends.BATCH_SIZE).length + 2 }
+      );
+      txFee += SLP.BitcoinCash.toBitcoinCash(
+        Math.floor(SATOSHIS_PER_BYTE * (byteCount + encodedOpReturn.length)).toFixed(8)
+      );
+    }
 
     return {
       addresses,

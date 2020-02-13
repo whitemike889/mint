@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import styled from "styled-components";
-import { ButtonQR } from "badger-components-react";
 import { WalletContext } from "../../../utils/context";
 import burnToken from "../../../utils/broadcastTransaction";
 import { Alert, Card, Icon, Form, Input, Button, Spin, notification } from "antd";
@@ -8,16 +6,9 @@ import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { FireIcon } from "../../Common/CustomIcons";
 
-const StyledButtonWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-`;
-
 const Burn = ({ token, onClose }) => {
   const ContextValue = React.useContext(WalletContext);
-  const { wallet, balances } = ContextValue;
+  const { wallet } = ContextValue;
   const [formData, setFormData] = useState({
     dirty: true,
     textToDelete: ""

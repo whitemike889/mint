@@ -1,8 +1,15 @@
 export default class Dividends {
-  static BATCH_SIZE = 2500;
+  static BATCH_SIZE = 1;
+  static Status = {
+    IN_PROGRESS: 0,
+    PAUSED: 1,
+    CANCELED: 2,
+    CRASHED: 3
+  };
 
   constructor({ token, recipients, totalValue, values, opReturn }) {
     this.progress = 0;
+    this.status = Dividends.Status.IN_PROGRESS;
     this.token = token;
     this.startDate = Date.now();
     this.endDate = null;
@@ -12,6 +19,7 @@ export default class Dividends {
     this.remainingValues = values;
     this.opReturn = opReturn;
     this.totalValue = totalValue;
+    this.error = "";
   }
 
   static getAll = () =>

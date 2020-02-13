@@ -1,5 +1,5 @@
 import DividendsPayment from "./dividends";
-import { sendBch } from "../sendBch";
+import { sendBch, SEND_BCH_ERRORS } from "../sendBch";
 import Dividends from "./dividends";
 import { getEncodedOpReturnMessage } from "../sendDividends";
 
@@ -7,8 +7,10 @@ export default class DividendsManager {
   static async update({ wallet, utxos }) {
     try {
       const dividends = Object.values(DividendsPayment.getAll());
-      const dividend = dividends.find(dividend => dividend.progress < 1);
-      if (dividend) {
+      const dividend = dividends.find(
+        dividend => dividend.progress < 1 && dividend.status === Dividends.Status.IN_PROGRESS
+      );
+      if (dividend && utxos) {
         await DividendsManager._update({ wallet, dividend, utxos });
       }
     } catch (error) {
@@ -34,10 +36,23 @@ export default class DividendsManager {
       dividend.txs.push(tx);
       dividend.remainingRecipients = dividend.remainingRecipients.slice(Dividends.BATCH_SIZE);
       dividend.remainingValues = dividend.remainingValues.slice(Dividends.BATCH_SIZE);
-      dividend.progress = 1 - dividend.remainingRecipients / dividend.totalRecipients;
-      dividend.endDate = Date.now();
+      dividend.progress = 1 - dividend.remainingRecipients.length / dividend.totalRecipients;
+      if (dividend.remainingValues.length === 0) {
+        dividend.endDate = Date.now();
+      }
       Dividends.save(dividend);
     } catch (error) {
+      if (
+        error.code &&
+        (error.code === SEND_BCH_ERRORS.DOUBLE_SPENDING ||
+          error.code === SEND_BCH_ERRORS.NETWORK_ERROR)
+      ) {
+        return;
+      }
+
+      dividend.error = error.message;
+      dividend.status = Dividends.Status.CRASHED;
+      Dividends.save(dividend);
       console.info("Unable to update dividend", error.message);
     }
   }
