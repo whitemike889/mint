@@ -159,7 +159,7 @@ export default () => {
             setTokenCardAction(null);
           }}
         >
-          <FireIcon style={{ marginBottom: "4px" }} /> Open Burn Token Options
+          <FireIcon style={{ marginBottom: "4px" }} /> Burn
         </Paragraph>
       );
     }
