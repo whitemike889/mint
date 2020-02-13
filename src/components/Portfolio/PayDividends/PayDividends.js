@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Img from "react-image";
 import makeBlockie from "ethereum-blockies-base64";
@@ -106,6 +106,8 @@ const PayDividends = (SLP, { token, onClose }) => {
       document.body.style.overflow = "";
     }
   };
+
+  useEffect(() => () => (document.body.style.overflow = ""), []);
 
   async function submit() {
     setFormData({
