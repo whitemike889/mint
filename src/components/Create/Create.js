@@ -89,7 +89,7 @@ const Create = ({ history }) => {
           message = e.message;
           break;
         default:
-          message = "Unknown Error, try again later";
+          message = "Transaction Failed. Try again later";
           break;
       }
 
