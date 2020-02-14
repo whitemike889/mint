@@ -26,7 +26,7 @@ const App = () => {
   const { wallet } = ContextValue;
   const radio = React.useRef(null);
   const handleChange = e => {
-    if (e.key < 4) setKey(e.key);
+    if (e.key < 5) setKey(e.key);
     setTimeout(() => mobile && setCollapsed(true), 100);
   };
 
@@ -99,7 +99,10 @@ const App = () => {
                   ? {
                       zIndex: "100",
                       position: "fixed",
-                      height: document.body.scrollHeight
+                      height: document.body.scrollHeight,
+                      top: 0,
+                      bottom: 0,
+                      overflowY: "scroll"
                     }
                   : { height: "100%" }
               }
