@@ -191,7 +191,7 @@ const PayDividends = ({ SLP, token, onClose }) => {
         message = "Insufficient funds.";
       }
       if (!e.error) {
-        message = message = `Transaction failed. This error is probably caused by ${getRestUrl()} being down.`;
+        message = `Transaction failed. This error is probably caused by ${getRestUrl()} being down.`;
       } else {
         message = e.message;
       }
