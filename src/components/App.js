@@ -99,10 +99,10 @@ const App = () => {
                   ? {
                       zIndex: "100",
                       position: "fixed",
-                      height: document.body.scrollHeight,
                       top: 0,
                       bottom: 0,
-                      overflowY: "scroll"
+                      overflowY: `${collapsed ? "" : "scroll"}`,
+                      overflowX: `${collapsed ? "" : "hidden"}`
                     }
                   : { height: "100%" }
               }
