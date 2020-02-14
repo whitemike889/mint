@@ -17,6 +17,7 @@ import debounce from "../../../utils/debounce";
 import { FormItemWithMaxAddon } from "../EnhancedInputs";
 import { AdvancedOptions } from "./AdvancedOptions";
 import { QRCode } from "../../Common/QRCode";
+import { getRestUrl } from "../../../utils/withSLP";
 
 const StyledPayDividends = styled.div`
   * {
@@ -188,6 +189,9 @@ const PayDividends = ({ SLP, token, onClose }) => {
         message = "Balance of sending address is zero";
       } else if (/Insufficient funds/.test(e.message)) {
         message = "Insufficient funds.";
+      }
+      if (!e.error) {
+        message = `Transaction failed. This error is probably caused by ${getRestUrl()} being down.`;
       } else {
         message = e.message;
       }

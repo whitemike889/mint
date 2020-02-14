@@ -8,6 +8,7 @@ import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { HammerIcon } from "../../Common/CustomIcons";
 import { FormItemWithQRCodeAddon } from "../EnhancedInputs";
+import { getRestUrl } from "../../../utils/withSLP";
 
 const StyledButtonWrapper = styled.div`
   display: flex;
@@ -71,6 +72,9 @@ const Mint = ({ token, onClose }) => {
         message = e.message;
       } else if (/Invalid BCH address/.test(e.message)) {
         message = "Invalid BCH address";
+      }
+      if (!e.error) {
+        message = `Transaction failed. This error is probably caused by ${getRestUrl()} being down.`;
       } else {
         message = e.message;
       }
