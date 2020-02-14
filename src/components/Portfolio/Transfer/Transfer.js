@@ -7,6 +7,7 @@ import Paragraph from "antd/lib/typography/Paragraph";
 import sendToken from "../../../utils/broadcastTransaction";
 import { PlaneIcon } from "../../Common/CustomIcons";
 import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs";
+import { getRestUrl } from "../../../utils/withSLP";
 
 const Transfer = ({ token, onClose }) => {
   const { wallet } = React.useContext(WalletContext);
@@ -57,7 +58,7 @@ const Transfer = ({ token, onClose }) => {
       } else if (/has no matching Script/.test(e.message)) {
         message = "Invalid address";
       } else if (!e.error) {
-        message = "Transaction failed. Please try again later.";
+        message = `Transaction failed. This error is probably caused by ${getRestUrl()} being down.`;
       } else {
         message = e.message;
       }
