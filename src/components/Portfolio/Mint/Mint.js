@@ -71,6 +71,9 @@ const Mint = ({ token, onClose }) => {
         message = e.message;
       } else if (/Invalid BCH address/.test(e.message)) {
         message = "Invalid BCH address";
+      }
+      if (!e.error) {
+        message = "Transaction failed. Please try again later.";
       } else {
         message = e.message;
       }

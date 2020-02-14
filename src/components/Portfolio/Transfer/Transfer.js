@@ -56,6 +56,8 @@ const Transfer = ({ token, onClose }) => {
         message = e.message;
       } else if (/has no matching Script/.test(e.message)) {
         message = "Invalid address";
+      } else if (!e.error) {
+        message = "Transaction failed. Please try again later.";
       } else {
         message = e.message;
       }

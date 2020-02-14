@@ -63,7 +63,13 @@ const SendBCH = ({ onClose, outerAction }) => {
 
       onClose();
     } catch (e) {
-      const message = e.message;
+      let message;
+
+      if (!e.error) {
+        message = "Transaction failed. Please try again later.";
+      } else {
+        message = e.message;
+      }
 
       notification.error({
         message: "Error",
