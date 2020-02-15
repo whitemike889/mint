@@ -104,7 +104,11 @@ const PayDividends = ({ SLP, token, onClose }) => {
 
       notification.success({
         message: "Success",
-        description: <Paragraph>Dividend payment successfully scheduled.</Paragraph>,
+        description: (
+          <Paragraph>
+            Dividend payment scheduled. See "Dividend History" to get more informations.
+          </Paragraph>
+        ),
         duration: 2
       });
 

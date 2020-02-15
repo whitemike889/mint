@@ -54,9 +54,6 @@ const StyledDescriptions = styled(Descriptions)`
   margin-top: 6px;
   overflow: visible;
 
-  .ant-descriptions-item {
-    white-space: nowrap;
-  }
   .ant-descriptions-item-content,
   .ant-descriptions-item-content * {
     font-size: 14px;
@@ -104,7 +101,7 @@ const DividendHistory = () => {
 
   const getProgressColor = dividend => {
     if (dividend.status === Dividends.Status.PAUSED) {
-      return "yellow";
+      return "orange";
     } else if (
       dividend.status === Dividends.Status.CANCELED ||
       dividend.status === Dividends.Status.CRASHED
@@ -137,17 +134,42 @@ const DividendHistory = () => {
                 renderExpanded={() => (
                   <>
                     <br />
-                    {(dividend.status === Dividends.Status.CRASHED ||
-                      dividend.status === Dividends.Status.CANCELED) && (
+                    {dividend.progress === 1 && (
                       <Alert
                         style={{ marginBottom: 14 }}
                         message={
                           <>
                             <Icon type="info-circle" />
-                            Crashed dividend. Cause: "{dividend.error}".
+                            Completed
                           </>
                         }
                         type="info"
+                        closable={false}
+                      />
+                    )}
+                    {dividend.status === Dividends.Status.CANCELED && (
+                      <Alert
+                        style={{ marginBottom: 14 }}
+                        message={
+                          <>
+                            <Icon type="stop" />
+                            Canceled
+                          </>
+                        }
+                        type="info"
+                        closable={false}
+                      />
+                    )}
+                    {dividend.status === Dividends.Status.CRASHED && (
+                      <Alert
+                        style={{ marginBottom: 14 }}
+                        message={
+                          <>
+                            <Icon type="stop" />
+                            Crashed due to: {dividend.error}
+                          </>
+                        }
+                        type="error"
                         closable={false}
                       />
                     )}
@@ -192,6 +214,14 @@ const DividendHistory = () => {
                             .decodedOpReturn
                         }
                       </Descriptions.Item>
+                      <Descriptions.Item label="Start Date">
+                        {moment(dividend.startDate).format("LL LTS")}
+                      </Descriptions.Item>
+                      {dividend.endDate ? (
+                        <Descriptions.Item label="End Date">
+                          {moment(dividend.endDate).format("LL LTS")}
+                        </Descriptions.Item>
+                      ) : null}
                       {dividend.txs.map((tx, index) => (
                         <Descriptions.Item label={`Transaction ${index + 1}`}>
                           <a
@@ -203,12 +233,6 @@ const DividendHistory = () => {
                           </a>
                         </Descriptions.Item>
                       ))}
-                      <Descriptions.Item label="Start Date">
-                        {moment(dividend.startDate).format("LL LTS")}
-                      </Descriptions.Item>
-                      <Descriptions.Item label="End Date">
-                        {dividend.endDate ? moment(dividend.endDate).format("LL LTS") : ""}
-                      </Descriptions.Item>
                     </StyledDescriptions>
                     <br />
                   </>

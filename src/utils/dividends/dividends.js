@@ -1,5 +1,6 @@
 export default class Dividends {
-  static BATCH_SIZE = 1;
+  static BATCH_SIZE = 2500;
+
   static Status = {
     IN_PROGRESS: 0,
     PAUSED: 1,
