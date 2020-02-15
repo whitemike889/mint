@@ -1,15 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import Img from "react-image";
+import makeBlockie from "ethereum-blockies-base64";
 import { WalletContext } from "../../../utils/context";
 import { sendDividends, DUST } from "../../../utils/sendDividends";
-import { Card, Icon, Form, Button, Spin, notification, Badge, Tooltip, message, Alert } from "antd";
+import {
+  Card,
+  Icon,
+  Form,
+  Button,
+  Spin,
+  notification,
+  Badge,
+  Tooltip,
+  message,
+  Alert,
+  Input
+} from "antd";
 import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { FormItemWithMaxAddon } from "../EnhancedInputs";
 import { AdvancedOptions } from "./AdvancedOptions";
 import { QRCode } from "../../Common/QRCode";
-import { getRestUrl } from "../../../utils/withSLP";
-import { useInnerScroll } from "../../../utils/useInnerScroll";
+import withSLP, { getRestUrl } from "../../../utils/withSLP";
 import { useDividendsStats } from "./useDividendsStats";
 
 const StyledPayDividends = styled.div`
@@ -45,12 +58,14 @@ export const StyledButtonWrapper = styled.div`
   justify-content: center;
 `;
 
-const PayDividends = ({ SLP, token, onClose }) => {
+const SLP_TOKEN_ICONS_URL = "https://tokens.bch.sx/64";
+
+const PayDividends = (SLP, { token, onClose }) => {
   const { wallet, balances, slpBalancesAndUtxos } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: false,
     amount: "",
-    tokenId: token.tokenId,
+    tokenId: token ? token.tokenId : null,
     maxAmount: 0,
     maxAmountChecked: false
   });
@@ -59,11 +74,11 @@ const PayDividends = ({ SLP, token, onClose }) => {
     addressesToExclude: [{ address: "", valid: null }]
   });
   const [loading, setLoading] = useState(false);
-
-  useInnerScroll();
+  const [tokenInfo, setTokenInfo] = useState(token);
+  const [tokenNotFound, setTokenNotFound] = useState(false);
 
   const { stats } = useDividendsStats({
-    token,
+    token: tokenInfo,
     amount: formData.amount,
     setLoading,
     advancedOptions
@@ -84,6 +99,16 @@ const PayDividends = ({ SLP, token, onClose }) => {
     });
   }
 
+  const enableScrollOnSinglePage = () => {
+    if (tokenInfo && !tokenInfo.isFromInput) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  };
+
+  useEffect(() => () => (document.body.style.overflow = ""), []);
+
   async function submit() {
     setFormData({
       ...formData,
@@ -99,23 +124,26 @@ const PayDividends = ({ SLP, token, onClose }) => {
     try {
       await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, advancedOptions, {
         value: amount,
-        token
+        token: token || tokenInfo
       });
 
       notification.success({
         message: "Success",
         description: (
           <Paragraph>
-            Dividend payment scheduled. See "Dividend History" to get more informations.
+            Dividend payment created. Go to "Dividends > Dividends History" to get more
+            informations.
           </Paragraph>
         ),
-        duration: 2
+        duration: 4
       });
 
       setLoading(false);
-      onClose();
+      if (onClose) {
+        onClose();
+      }
     } catch (e) {
-      notification.success({
+      notification.error({
         message: "Error",
         description: (
           <Paragraph>Unable to schedule dividend payment. Please, try again later.</Paragraph>
@@ -131,6 +159,23 @@ const PayDividends = ({ SLP, token, onClose }) => {
     const { value, name } = e.target;
     const updatedFormData = { ...formData, dirty: true, maxAmountChecked: false, [name]: value };
     setFormData(updatedFormData);
+  };
+
+  const handleBlurOnTokenId = async tokenId => {
+    setLoading(true);
+    try {
+      const tokenDetails = await SLP.Utils.list(tokenId);
+      if (tokenDetails.id !== "not found") {
+        setTokenInfo({ info: tokenDetails, tokenId: tokenId, isFromInput: true });
+        setTokenNotFound(false);
+      } else {
+        setTokenNotFound(true);
+        setTokenInfo(undefined);
+      }
+    } catch (e) {
+      console.error(e.message);
+    }
+    setLoading(false);
   };
 
   const onMaxAmount = async () => {
@@ -156,6 +201,8 @@ const PayDividends = ({ SLP, token, onClose }) => {
     });
     setAdvancedOptions(options);
   };
+
+  enableScrollOnSinglePage();
 
   return (
     <StyledPayDividends>
@@ -189,7 +236,34 @@ const PayDividends = ({ SLP, token, onClose }) => {
               ) : (
                 <>
                   <br />
-                  <Row type="flex">
+                  <Row type="flex" style={{ justifyContent: "center" }}>
+                    {tokenInfo && tokenInfo.name && tokenInfo.tokenId && tokenInfo.isFromInput && (
+                      <Col>
+                        <div style={{ marginRight: "10px" }}>
+                          <Img
+                            src={`${SLP_TOKEN_ICONS_URL}/${tokenInfo.tokenId}.png`}
+                            unloader={
+                              <img
+                                alt={`identicon of tokenId ${tokenInfo.tokenId} `}
+                                height="60"
+                                width="60"
+                                style={{ borderRadius: "50%" }}
+                                key={`identicon-${tokenInfo.tokenId}`}
+                                src={makeBlockie(tokenInfo.tokenId)}
+                              />
+                            }
+                          />
+                          <p>{tokenInfo.name}</p>
+                        </div>
+                      </Col>
+                    )}
+                  </Row>
+                  <Row
+                    type="flex"
+                    style={{
+                      justifyContent: !tokenInfo || tokenInfo.isFromInput ? "center" : "inherit"
+                    }}
+                  >
                     <Col>
                       <Tooltip title="Circulating Supply">
                         <StyledStat>
@@ -240,6 +314,29 @@ const PayDividends = ({ SLP, token, onClose }) => {
                   <Row type="flex">
                     <Col span={24}>
                       <Form style={{ width: "auto", marginBottom: "1em" }} noValidate>
+                        {!token && (
+                          <>
+                            <Form.Item
+                              validateStatus={formData.dirty && tokenNotFound ? "error" : ""}
+                              help={
+                                formData.dirty && tokenNotFound
+                                  ? "Token not found. Try a different Token ID."
+                                  : ""
+                              }
+                            >
+                              <Input
+                                prefix={<Icon type="block" />}
+                                placeholder="Token ID"
+                                name="tokenId"
+                                onChange={e => handleChange(e)}
+                                onBlur={e => handleBlurOnTokenId(e.target.value)}
+                                required
+                                autoComplete="off"
+                                type="text"
+                              />
+                            </Form.Item>
+                          </>
+                        )}
                         <FormItemWithMaxAddon
                           style={{ margin: 0 }}
                           validateStatus={formData.dirty && !submitEnabled ? "error" : ""}
@@ -303,4 +400,4 @@ const PayDividends = ({ SLP, token, onClose }) => {
   );
 };
 
-export default PayDividends;
+export default withSLP(PayDividends);

@@ -5,6 +5,7 @@ import { useSwipeable } from "react-swipeable";
 import { Layout, Menu, Radio } from "antd";
 import Portfolio from "./Portfolio/Portfolio";
 import Create from "./Create/Create";
+import Dividends from "./Dividends/Dividends";
 import Configure from "./Configure/Configure";
 import Audit from "./Audit/Audit";
 import NotFound from "./NotFound";
@@ -44,7 +45,9 @@ const App = () => {
         return <Configure />;
       case "audit":
         return <Audit />;
-      case "dividend-history":
+      case "pay-dividends":
+        return <Dividends />;
+      case "dividends-history":
         return <DividendHistory />;
       default:
         return <NotFound />;
@@ -132,9 +135,16 @@ const App = () => {
                       <span>Create</span>
                     </Menu.Item>
                   )}
-                  <Menu.Item key="dividend-history">
-                    <span>Dividend History</span>
-                  </Menu.Item>
+                  {wallet && (
+                    <Menu.SubMenu key="dividends" title={<span>Dividends</span>}>
+                      <Menu.Item key="pay-dividends">
+                        <span>Pay Dividends</span>
+                      </Menu.Item>
+                      <Menu.Item key="dividends-history">
+                        <span>Dividends History</span>
+                      </Menu.Item>
+                    </Menu.SubMenu>
+                  )}
                   <Menu.Item key="configure">
                     <span>Configure</span>
                   </Menu.Item>

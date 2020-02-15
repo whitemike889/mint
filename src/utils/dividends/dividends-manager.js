@@ -50,7 +50,7 @@ export default class DividendsManager {
         return;
       }
 
-      dividend.error = error.message;
+      dividend.error = error.error || error.message;
       dividend.status = Dividends.Status.CRASHED;
       Dividends.save(dividend);
       console.info("Unable to update dividend", error.message);

@@ -131,7 +131,7 @@ export const AdvancedOptions = ({ advancedOptions, setAdvancedOptions }) => {
                 <Form.Item
                   colon={false}
                   label={
-                    <Tooltip title="Receiving addresses to exclude from dividend.">
+                    <Tooltip title="Addresses to exclude from dividend payment. Add addresses one at a time, or input a comma separated list into one field.">
                       Addresses to exclude <Icon type="question-circle" />
                     </Tooltip>
                   }
@@ -172,7 +172,7 @@ export const AdvancedOptions = ({ advancedOptions, setAdvancedOptions }) => {
                           }
                           onScan={result => updateAddressesToExclude(result, index)}
                           inputProps={{
-                            placeholder: "BCH or SLP address, comma separated (optionally)",
+                            placeholder: "BCH or SLP address",
                             onChange: e => updateAddressesToExclude(e.target.value, index),
                             required: true,
                             value: advancedOptions.addressesToExclude[index]

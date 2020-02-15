@@ -166,7 +166,7 @@ const DividendHistory = () => {
                         message={
                           <>
                             <Icon type="stop" />
-                            Crashed due to: {dividend.error}
+                            Crashed {dividend.error ? `Cause: ${dividend.error}` : ""}
                           </>
                         }
                         type="error"
