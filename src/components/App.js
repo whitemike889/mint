@@ -1,8 +1,9 @@
 import React from "react";
 import "antd/dist/antd.less";
 import "../index.css";
+import styled from "styled-components";
 import { useSwipeable } from "react-swipeable";
-import { Layout, Menu, Radio } from "antd";
+import { Layout, Menu, Radio, Tabs, Icon } from "antd";
 import Portfolio from "./Portfolio/Portfolio";
 import Create from "./Create/Create";
 import Dividends from "./Dividends/Dividends";
@@ -15,7 +16,66 @@ import logo from "../assets/logo.png";
 import { BrowserRouter as Router } from "react-router-dom";
 import { QRCode } from "./Common/QRCode";
 
-const { Header, Content, Sider } = Layout;
+const { Header, Content, Sider, Footer } = Layout;
+const { TabPane } = Tabs;
+
+const StyledTabsMenu = styled.div`
+  .ant-layout-footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    padding: 0;
+  }
+  .ant-tabs-bar.ant-tabs-bottom-bar {
+    margin-top: 0;
+    border-top: 1px solid #ddd;
+  }
+
+  .ant-tabs-tab {
+    span {
+      font-size: 10px;
+      display: grid;
+      font-weight: bold;
+    }
+    .anticon {
+      color: rgb(148, 148, 148);
+      font-size: 24px;
+      margin-left: 8px;
+      margin-bottom: 3px;
+    }
+  }
+
+  .ant-tabs-tab:hover {
+    color: #4ab290 !important;
+    .anticon {
+      color: #4ab290;
+    }
+  }
+
+  .ant-tabs-tab-active.ant-tabs-tab {
+    color: #4ab290;
+    .anticon {
+      color: #4ab290;
+    }
+  }
+
+  .ant-tabs-tab-active.ant-tabs-tab {
+    color: #4ab290;
+    .anticon {
+      color: #4ab290;
+    }
+  }
+  .ant-tabs-tab-active:active {
+    color: #4ab290 !important;
+  }
+  .ant-tabs-ink-bar {
+    display: none !important;
+  }
+
+  .ant-tabs-nav {
+    margin: -3.5px 0 0 0;
+  }
+`;
 
 const App = () => {
   const [collapsed, setCollapsed] = React.useState(window.innerWidth < 768);
@@ -25,9 +85,19 @@ const App = () => {
   const ContextValue = React.useContext(WalletContext);
   const { wallet } = ContextValue;
   const radio = React.useRef(null);
+
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [key]);
+
   const handleChange = e => {
     if (e.key < 5) setKey(e.key);
-    setTimeout(() => mobile && setCollapsed(true), 100);
+    setTimeout(() => {
+      if (mobile) {
+        setCollapsed(true);
+        document.body.style.overflow = "";
+      }
+    }, 100);
   };
 
   const handleChangeAddress = e => {
@@ -52,17 +122,39 @@ const App = () => {
   };
 
   const handleResize = () => setMobile(window.innerWidth < 768);
+
+  const handleClickTrigger = e => (document.body.style.overflow = "hidden");
+
+  React.useEffect(() => {
+    if (mobile) {
+      const triggerElement = document.getElementsByTagName("aside")[0].children[1];
+
+      triggerElement.addEventListener("click", handleClickTrigger);
+
+      return () => triggerElement.removeEventListener("click", handleClickTrigger);
+    }
+  }, [mobile]);
+
   React.useEffect(() => {
     handleResize();
     window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
+
   const handleSwipe = useSwipeable({
     trackMouse: mobile,
-    onSwipedRight: () => (mobile ? setCollapsed(false) : null),
-    onSwipedLeft: () => (mobile ? setCollapsed(true) : null)
+    onSwipedRight: () => {
+      if (mobile) {
+        setCollapsed(false);
+        document.body.style.overflow = "hidden";
+      }
+    },
+    onSwipedLeft: () => {
+      if (mobile) {
+        setCollapsed(true);
+        document.body.style.overflow = "";
+      }
+    }
   });
 
   return (
@@ -78,7 +170,8 @@ const App = () => {
                     position: "absolute",
                     height: document.body.scrollHeight,
                     float: "left",
-                    width: collapsed ? "40px" : "296px"
+                    width: collapsed ? "40px" : "100vw",
+                    background: collapsed ? null : "rgba(0, 0, 0, 0.2)"
                   }
                 : {
                     zIndex: "1000",
@@ -186,7 +279,6 @@ const App = () => {
                       style={{
                         marginLeft: "20px",
                         paddingTop: "10px"
-                        // display: `${window.innerWidth > 768 ? "none" : null}`
                       }}
                     >
                       <div>
@@ -202,7 +294,6 @@ const App = () => {
 
                       <Radio.Group
                         defaultValue="slpAddress"
-                        // onChange={e => handleChangeAddress(e)}
                         value={address}
                         size="small"
                         buttonStyle="solid"
@@ -253,7 +344,7 @@ const App = () => {
                 }}
               ></div>
             </Header>
-            <Content style={{ margin: "0 16px", backgroundColor: "#FBFBFD" }}>
+            <Content style={{ margin: "0 16px 48px 16px", backgroundColor: "#FBFBFD" }}>
               <div
                 style={{
                   padding: 24,
@@ -263,6 +354,48 @@ const App = () => {
                 {route()}
               </div>
             </Content>
+            {mobile && (
+              <StyledTabsMenu>
+                <Footer>
+                  <Tabs
+                    activeKey={key}
+                    tabBarStyle={{ height: "55px" }}
+                    onChange={key => handleChange({ key })}
+                    tabBarGutter={"16vw"}
+                    tabPosition="bottom"
+                    defaultActiveKey="0"
+                  >
+                    <TabPane
+                      tab={
+                        <span>
+                          <Icon type="folder-open" theme="filled" />
+                          Portfolio
+                        </span>
+                      }
+                      key="0"
+                    />
+                    <TabPane
+                      tab={
+                        <span>
+                          <Icon type="plus-square" theme="filled" />
+                          Create
+                        </span>
+                      }
+                      key="1"
+                    />
+                    <TabPane
+                      tab={
+                        <span>
+                          <Icon type="dollar-circle" theme="filled" />
+                          Dividends
+                        </span>
+                      }
+                      key="2"
+                    />
+                  </Tabs>
+                </Footer>
+              </StyledTabsMenu>
+            )}
           </Layout>
         </Layout>
       </div>

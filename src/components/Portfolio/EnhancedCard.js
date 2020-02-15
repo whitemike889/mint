@@ -34,7 +34,12 @@ const GlobalStyle = createGlobalStyle`
     }
 `;
 
-const StyledWrapper = styled.div``;
+const StyledWrapper = styled.div`
+  @media (max-width: 768px) {
+    text-align: -webkit-center;
+    text-align: -moz-center;
+  }
+`;
 
 const StyledEnhancedCard = styled(Card)`
   border-radius: 8px;
@@ -134,6 +139,16 @@ export const StyledModal = styled(Modal)`
       ${StyledEnhancedCard} {
         margin-top: 0 !important;
         height: auto !important;
+        ${props =>
+          props.visible
+            ? `
+                .ant-card-body {
+                  &> * {
+                    overflow-y: hidden;
+                  }
+                }
+            `
+            : ""}
       }
     }
   }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import Img from "react-image";
 import makeBlockie from "ethereum-blockies-base64";
@@ -29,14 +29,30 @@ const StyledPayDividends = styled.div`
   * {
     color: rgb(62, 63, 66) !important;
   }
-
+  .anticon-close,
+  .ant-alert-close-icon {
+    margin-top: -7px;
+    margin-right: -7px;
+  }
   .ant-alert-message {
     display: flex;
     align-items: center;
+    text-align: left;
+    word-break: break-word;
 
+    @media screen and (max-width: 600px) {
+      font-size: 10px;
+      word-break: break-word;
+    }
     .anticon {
       margin-right: 7px;
       font-size: 18px;
+    }
+  }
+  @media screen and (max-width: 600px) {
+    .anticon-close,
+    .ant-alert-close-icon {
+      font-size: 7px !important;
     }
   }
 `;
@@ -60,7 +76,7 @@ export const StyledButtonWrapper = styled.div`
 
 const SLP_TOKEN_ICONS_URL = "https://tokens.bch.sx/64";
 
-const PayDividends = (SLP, { token, onClose }) => {
+const PayDividends = (SLP, { token, onClose, bordered = false }) => {
   const { wallet, balances, slpBalancesAndUtxos } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: false,
@@ -98,16 +114,6 @@ const PayDividends = (SLP, { token, onClose }) => {
       amount: stats.maxAmount
     });
   }
-
-  const enableScrollOnSinglePage = () => {
-    if (tokenInfo && !tokenInfo.isFromInput) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-  };
-
-  useEffect(() => () => (document.body.style.overflow = ""), []);
 
   async function submit() {
     setFormData({
@@ -227,8 +233,6 @@ const PayDividends = (SLP, { token, onClose }) => {
     setAdvancedOptions(options);
   };
 
-  enableScrollOnSinglePage();
-
   return (
     <StyledPayDividends>
       <Row type="flex" className="dividends">
@@ -240,7 +244,7 @@ const PayDividends = (SLP, { token, onClose }) => {
                   <Icon type="dollar-circle" theme="filled" /> Pay Dividends
                 </h2>
               }
-              bordered={false}
+              bordered={bordered}
             >
               {!balances.totalBalance ? (
                 <Row justify="center" type="flex">
@@ -388,7 +392,7 @@ const PayDividends = (SLP, { token, onClose }) => {
                     </Col>
                     <Col span={24}>
                       <Alert
-                        style={{ marginBottom: 14 }}
+                        style={{ marginBottom: 14, maxWidth: "100%" }}
                         message={
                           <>
                             <Icon type="info-circle" />

@@ -13,6 +13,10 @@ aside::-webkit-scrollbar-thumb {
   outline: 1px solid slategrey;
 }
 
+.ant-modal-wrap.ant-modal-centered::-webkit-scrollbar {
+  display: none;
+}
+
 .App {
   text-align: center;
   font-family: "Gilroy", sans-serif;
