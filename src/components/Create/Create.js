@@ -14,7 +14,8 @@ import {
   Collapse,
   Upload,
   Tooltip,
-  Alert
+  Alert,
+  Checkbox
 } from "antd";
 import styled from "styled-components";
 import Paragraph from "antd/lib/typography/Paragraph";
@@ -30,6 +31,12 @@ const StyledCard = styled.div`
     @media (max-width: 425px) {
       padding: 8px;
     }
+  }
+  .ant-checkbox-inner {
+    border: 1px solid #20242d !important;
+  }
+  .ant-checkbox-wrapper {
+    margin-left: 5px;
   }
 `;
 
@@ -102,7 +109,8 @@ const Create = ({ history }) => {
     documentHash: "",
     decimals: "",
     documentUri: "",
-    amount: ""
+    amount: "",
+    fixedSupply: false
   });
   const [hash, setHash] = React.useState("");
   const [fileList, setFileList] = React.useState();
@@ -224,7 +232,7 @@ const Create = ({ history }) => {
     }
 
     setLoading(true);
-    const { tokenName, tokenSymbol, documentUri, amount, decimals } = data;
+    const { tokenName, tokenSymbol, documentUri, amount, decimals, fixedSupply } = data;
     try {
       const docUri = documentUri || "developer.bitcoin.com";
       const link = await createToken(wallet, {
@@ -233,7 +241,8 @@ const Create = ({ history }) => {
         documentHash: hash,
         decimals,
         docUri,
-        initialTokenQty: amount
+        initialTokenQty: amount,
+        fixedSupply
       });
 
       notification.success({
@@ -274,6 +283,12 @@ const Create = ({ history }) => {
 
     setData(p => ({ ...p, [name]: value }));
   };
+
+  const handleCheckbox = e => {
+    const { checked, name } = e.target;
+    setData(p => ({ ...p, [name]: checked }));
+  };
+
   return (
     <StyledCreate>
       <Row justify="center" type="flex">
@@ -410,6 +425,25 @@ const Create = ({ history }) => {
                       type="number"
                     />
                   </Form.Item>
+
+                  <Form.Item
+                    style={{ textAlign: "left" }}
+                    labelAlign="left"
+                    labelCol={{ span: 3, offset: 0 }}
+                    colon={false}
+                  >
+                    <Checkbox
+                      name="fixedSupply"
+                      checked={data.fixedSupply}
+                      onChange={e => handleCheckbox(e)}
+                    >
+                      Fixed Supply?{" "}
+                      <Tooltip title="If you create a fixed supply token, you will not be able to mint additional supply for this token in the future.">
+                        <Icon type="info-circle" />
+                      </Tooltip>
+                    </Checkbox>
+                  </Form.Item>
+
                   <StyledMoreOptionsCollapse>
                     <Collapse style={{ marginBottom: "24px" }} bordered={false}>
                       <Collapse.Panel
