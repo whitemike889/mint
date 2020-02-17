@@ -21,7 +21,7 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
 
     switch (TRANSACTION_TYPE) {
       case "IS_CREATING":
-        config.batonReceiverAddress = Path245.slpAddress;
+        config.batonReceiverAddress = config.fixedSupply === true ? null : Path245.slpAddress;
         config.decimals = config.decimals || 0;
         config.documentUri = config.docUri;
         config.tokenReceiverAddress = Path245.slpAddress;

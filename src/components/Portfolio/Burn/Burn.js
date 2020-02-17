@@ -299,7 +299,7 @@ const Burn = ({ token, avatar, onClose }) => {
                       }
                       help={
                         !formData.dirty && formData.burnBaton === false && !hasBalance
-                          ? `Check it if you wan to burn the mint baton`
+                          ? `Check it if you want to burn the mint baton`
                           : ""
                       }
                     >

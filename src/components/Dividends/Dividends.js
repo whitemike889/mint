@@ -8,7 +8,7 @@ export default () => {
     <StyledDividends>
       <Row justify="center" type="flex">
         <Col lg={10} span={24}>
-          <PayDividends />
+          <PayDividends bordered={true} />
         </Col>
       </Row>
     </StyledDividends>
