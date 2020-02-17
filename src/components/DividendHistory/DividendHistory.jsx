@@ -195,13 +195,6 @@ const DividendHistory = () => {
                             Resume
                           </Button>
                         )}
-                        <Button
-                          type="primary"
-                          icon="stop"
-                          onClick={() => updateDividendStatus(dividend, Dividends.Status.CANCELED)}
-                        >
-                          Cancel
-                        </Button>
                       </ButtonGroup>
                     ) : null}
                     <StyledDescriptions bordered column={1}>
