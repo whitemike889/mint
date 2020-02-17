@@ -50,6 +50,16 @@ export const StyledCollapse = styled(Collapse)`
   }
 `;
 
+const StyledSwitch = styled(Col)`
+  text-align: left;
+  margin-top: 12px;
+  color: rgb(62, 63, 66);
+
+  @media (max-width: 768px) {
+    text-align: center;
+  }
+`;
+
 export default () => {
   const ContextValue = React.useContext(WalletContext);
   const { wallet, tokens, loading, balances } = ContextValue;
@@ -62,6 +72,14 @@ export default () => {
   const [history, setHistory] = useState(null);
   const [outerAction, setOuterAction] = useState(false);
   const [showArchivedTokens, setShowArchivedTokens] = useState(false);
+
+  const isModalOpen = (action, selectedToken) => action === "sendBCH" || selectedToken !== null;
+
+  React.useEffect(() => {
+    document.body.style.overflow = isModalOpen(action, selectedToken) ? "hidden" : "";
+    return () => (document.body.style.overflow = "");
+  }, [action, selectedToken]);
+
   const getTokenHistory = async tokenInfo => {
     setLoadingTokenHistory(true);
     try {
@@ -513,11 +531,11 @@ export default () => {
               </Col>
             ))
         : null}
-      {tokens.length && (
-        <Col span={24} style={{ textAlign: "left", marginTop: "12px", color: "rgb(62, 63, 66)" }}>
+      {tokens.length ? (
+        <StyledSwitch span={24}>
           <Switch onChange={checked => setShowArchivedTokens(checked)} /> Show Archived Tokens
-        </Col>
-      )}
+        </StyledSwitch>
+      ) : null}
       <Col span={24} style={{ marginTop: "8px" }}>
         {!loading && !tokens.length && wallet ? <Empty description="No tokens found" /> : null}
         {!loading && !tokens.length && !wallet ? <OnBoarding /> : null}

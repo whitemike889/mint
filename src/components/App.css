@@ -2,6 +2,21 @@
 @import "~@fortawesome/fontawesome-free/css/all.css";
 @import url("https://fonts.googleapis.com/css?family=Khula&display=swap&.css");
 
+aside::-webkit-scrollbar {
+  width: 0.3em;
+}
+aside::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px #13171f;
+}
+aside::-webkit-scrollbar-thumb {
+  background-color: darkgrey;
+  outline: 1px solid slategrey;
+}
+
+.ant-modal-wrap.ant-modal-centered::-webkit-scrollbar {
+  display: none;
+}
+
 .App {
   text-align: center;
   font-family: "Gilroy", sans-serif;
