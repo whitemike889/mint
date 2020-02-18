@@ -53,8 +53,9 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
 
     return link;
   } catch (err) {
+    const message = err.message || err.error || JSON.stringify(err);
     console.error(`Error in createToken: `, err);
-    console.log(`Error message: ${err.message}`);
+    console.log(`Error message: ${message}`);
     throw err;
   }
 };
