@@ -9,6 +9,13 @@ export const InputAddonText = styled.span`
   width: 100%;
   height: 100%;
   display: block;
+
+  ${props =>
+    props.disabled
+      ? `
+      cursor: not-allowed;
+      `
+      : `cursor: pointer;`}
 `;
 
 export const FormItemWithMaxAddon = ({ onMax, inputProps, ...otherProps }) => {
@@ -16,7 +23,14 @@ export const FormItemWithMaxAddon = ({ onMax, inputProps, ...otherProps }) => {
     <Form.Item {...otherProps}>
       <Input
         prefix={<img src={bchLogo} alt="" width={16} height={16} />}
-        addonAfter={<InputAddonText onClick={onMax}>max</InputAddonText>}
+        addonAfter={
+          <InputAddonText
+            disabled={!!(inputProps || {}).disabled}
+            onClick={!(inputProps || {}).disabled && onMax}
+          >
+            max
+          </InputAddonText>
+        }
         {...inputProps}
       />
     </Form.Item>
