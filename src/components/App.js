@@ -382,6 +382,7 @@ const App = () => {
                         </span>
                       }
                       key="1"
+                      disabled={!wallet}
                     />
                     <TabPane
                       tab={
@@ -391,6 +392,7 @@ const App = () => {
                         </span>
                       }
                       key="2"
+                      disabled={!wallet}
                     />
                   </Tabs>
                 </Footer>

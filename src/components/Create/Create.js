@@ -438,10 +438,10 @@ const Create = ({ history }) => {
                       onChange={e => handleCheckbox(e)}
                     >
                       Fixed Supply?{" "}
-                      <Tooltip title="If you create a fixed supply token, you will not be able to mint additional supply for this token in the future.">
-                        <Icon type="info-circle" />
-                      </Tooltip>
                     </Checkbox>
+                    <Tooltip title="If you create a fixed supply token, you will not be able to mint additional supply for this token in the future.">
+                      <Icon type="info-circle" />
+                    </Tooltip>
                   </Form.Item>
 
                   <StyledMoreOptionsCollapse>
