@@ -66,9 +66,11 @@ const SendBCH = ({ onClose, outerAction }) => {
       let message;
 
       if (!e.error) {
-        message = `Transaction failed. This error is probably caused by ${getRestUrl()} being down.`;
+        message = `Transaction failed: no response from ${getRestUrl()}.`;
+      } else if (/Could not communicate with full node or other external service/.test(e.error)) {
+        message = "Could not communicate with API. Please try again.";
       } else {
-        message = e.message;
+        message = e.message || e.error || JSON.stringify(e);
       }
 
       notification.error({
@@ -76,7 +78,7 @@ const SendBCH = ({ onClose, outerAction }) => {
         description: message,
         duration: 2
       });
-      console.error(e.message);
+      console.error(e);
     }
 
     setLoading(false);
@@ -120,14 +122,15 @@ const SendBCH = ({ onClose, outerAction }) => {
         });
       setHistory(resp);
     } catch (err) {
-      const message = err.message;
+      const message = err.message || err.error || JSON.stringify(err);
 
       notification.error({
         message: "Error",
         description: message,
         duration: 2
       });
-      console.error(err.message);
+
+      console.error(err);
     }
 
     setLoading(false);

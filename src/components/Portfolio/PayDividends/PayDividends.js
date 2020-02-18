@@ -175,11 +175,12 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
         message = "Balance of sending address is zero";
       } else if (/Insufficient funds/.test(e.message)) {
         message = "Insufficient funds.";
-      }
-      if (!e.error) {
-        message = `Transaction failed. This error is probably caused by ${getRestUrl()} being down.`;
+      } else if (!e.error) {
+        message = `Transaction failed: no response from ${getRestUrl()}.`;
+      } else if (/Could not communicate with full node or other external service/.test(e.error)) {
+        message = "Could not communicate with API. Please try again.";
       } else {
-        message = e.message;
+        message = e.message || e.error || JSON.stringify(e);
       }
 
       notification.error({
@@ -187,7 +188,7 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
         description: message,
         duration: 2
       });
-      console.error(e.message);
+      console.error(e);
       setLoading(false);
     }
   }
@@ -216,7 +217,7 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
           setLastSearchedTokenId(tokenId);
         }
       } catch (e) {
-        console.error(e.message);
+        console.error(e);
       }
       setLoading(false);
     } else {
