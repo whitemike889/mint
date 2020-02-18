@@ -1,5 +1,23 @@
 # Changelog - Bitcoin.com Mint
 
+## Fev 18, 2020
+- [#61:](https://github.com/Bitcoin-com/mint/pull/61) Production Release
+- [#60:](https://github.com/Bitcoin-com/mint/pull/60) [feat] fixed_supply_tokens 
+- [#59:](https://github.com/Bitcoin-com/mint/pull/59) Fix/side bar scroll and audit menu item
+- [#57:](https://github.com/Bitcoin-com/mint/pull/57) [hotfix] Default error message when slp-sdk throws an unhandled exception
+- [#56:](https://github.com/Bitcoin-com/mint/pull/56) [fix] Fix dividends scroll
+- [#55:](https://github.com/Bitcoin-com/mint/pull/55) Fix/token burn adjustments
+- [#54:](https://github.com/Bitcoin-com/mint/pull/54) Feat/dividends page
+- [#53:](https://github.com/Bitcoin-com/mint/pull/53) [fix] document hash code review adjustments
+- [#52:](https://github.com/Bitcoin-com/mint/pull/52) [fix] Better tooltip of how users are eligible for dividends
+- [#51:](https://github.com/Bitcoin-com/mint/pull/51) [fix] Additional fix to the fee calculation of dividends payment
+- [#50:](https://github.com/Bitcoin-com/mint/pull/50) [feat] document hash on file upload and info linking to notary
+- [#49:](https://github.com/Bitcoin-com/mint/pull/49) [feat] burn with multiple funding addresses
+- [#48:](https://github.com/Bitcoin-com/mint/pull/48) [fix] sidebar collapse
+- [#47:](https://github.com/Bitcoin-com/mint/pull/47) Fix/replace transaction history slpdb queries and Dividends History
+- [#46:](https://github.com/Bitcoin-com/mint/pull/46) [feat] OP_RETURN added to dividend payments
+- [#45:](https://github.com/Bitcoin-com/mint/pull/45) [fix] Create token should not appear to users without a wallet
+
 ## Jan 28, 2020
 
 - [#43:](https://github.com/Bitcoin-com/mint/pull/43) Production release
