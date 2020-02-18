@@ -152,7 +152,7 @@ const Create = ({ history }) => {
       console.error("error", e);
       notification.error({
         message: "Error",
-        description: e.message,
+        description: e.message || e.error || JSON.stringify(e),
         duration: 2
       });
       setFileList(undefined);
@@ -256,16 +256,22 @@ const Create = ({ history }) => {
       });
     } catch (e) {
       let message;
-      switch (e.message) {
-        case "Transaction has no inputs":
-          message = "Insufficient balance";
-          break;
-        case "Document hash must be provided as a 64 character hex string":
-          message = e.message;
-          break;
-        default:
-          message = "Transaction Failed. Try again later";
-          break;
+      if (e.message) {
+        switch (e.message) {
+          case "Transaction has no inputs":
+            message = "Insufficient balance";
+            break;
+          case "Document hash must be provided as a 64 character hex string":
+            message = e.message;
+            break;
+          default:
+            message = "Transaction Failed. Try again later";
+            break;
+        }
+      } else if (/Could not communicate with full node or other external service/.test(e.error)) {
+        message = "Could not communicate with API. Please try again.";
+      } else {
+        message = e.error || JSON.stringify(e);
       }
 
       notification.error({
@@ -273,6 +279,7 @@ const Create = ({ history }) => {
         description: message,
         duration: 2
       });
+      console.error(e);
     } finally {
       setLoading(false);
     }

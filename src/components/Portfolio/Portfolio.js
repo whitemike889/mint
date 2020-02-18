@@ -86,14 +86,14 @@ export default () => {
       const resp = await getTokenTransactionHistory(wallet.slpAddresses, tokenInfo);
       setHistory(resp);
     } catch (err) {
-      const message = err.message;
+      const message = err.message || err.error || JSON.stringify(err);
 
       notification.error({
         message: "Error",
         description: message,
         duration: 2
       });
-      console.error(err.message);
+      console.error(err);
     }
 
     setLoadingTokenHistory(false);
