@@ -98,7 +98,8 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
     token: tokenInfo,
     amount: formData.amount,
     setLoading,
-    advancedOptions
+    advancedOptions,
+    disabled: !/^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) || !tokenInfo
   });
 
   const submitEnabled =
@@ -246,7 +247,9 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
     });
     setAdvancedOptions(options);
   };
+
   const tokenIdRef = React.useRef(null);
+
   return (
     <StyledPayDividends>
       <Row type="flex" className="dividends">
@@ -420,6 +423,10 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
                                           amount: ""
                                         }));
                                         setLastSearchedTokenId("");
+                                        setAdvancedOptions({
+                                          ignoreOwnAddress: true,
+                                          addressesToExclude: [{ address: "", valid: null }]
+                                        });
                                       }}
                                     />
                                   ) : (
@@ -492,6 +499,7 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
                       <AdvancedOptions
                         advancedOptions={advancedOptions}
                         setAdvancedOptions={setAdvancedOptionsAndCalcEligibles}
+                        disabled={!/^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) || !tokenInfo}
                       />
                     </Col>
                     <Col span={24}>
