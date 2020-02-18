@@ -8,6 +8,7 @@ import { Row, Col } from "antd";
 import Paragraph from "antd/lib/typography/Paragraph";
 import { HammerIcon } from "../../Common/CustomIcons";
 import { FormItemWithQRCodeAddon } from "../EnhancedInputs";
+import { getRestUrl } from "../../../utils/withSLP";
 
 const StyledButtonWrapper = styled.div`
   display: flex;
@@ -71,8 +72,12 @@ const Mint = ({ token, onClose }) => {
         message = e.message;
       } else if (/Invalid BCH address/.test(e.message)) {
         message = "Invalid BCH address";
+      } else if (!e.error) {
+        message = `Transaction failed: no response from ${getRestUrl()}.`;
+      } else if (/Could not communicate with full node or other external service/.test(e.error)) {
+        message = "Could not communicate with API. Please try again.";
       } else {
-        message = e.message;
+        message = e.message || e.error || JSON.stringify(e);
       }
 
       notification.error({
@@ -80,7 +85,7 @@ const Mint = ({ token, onClose }) => {
         description: message,
         duration: 2
       });
-      console.error(e.message);
+      console.error(e);
       setLoading(false);
     }
   }

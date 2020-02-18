@@ -42,7 +42,7 @@ const StyledAdvancedOptions = styled.div`
   }
 `;
 
-export const AdvancedOptions = ({ advancedOptions, setAdvancedOptions }) => {
+export const AdvancedOptions = ({ advancedOptions, setAdvancedOptions, disabled }) => {
   const setOpReturnMessage = React.useCallback(
     debounce(opReturnMessage => setAdvancedOptions({ ...advancedOptions, opReturnMessage }))
   );
@@ -103,8 +103,8 @@ export const AdvancedOptions = ({ advancedOptions, setAdvancedOptions }) => {
 
   return (
     <StyledAdvancedOptions>
-      <StyledCollapse>
-        <Collapse.Panel header="Advanced options">
+      <StyledCollapse {...(disabled ? { activeKey: 1 } : {})}>
+        <Collapse.Panel key={0} disabled={disabled} header="Advanced options">
           <Form>
             <Row>
               <Col span={24}>

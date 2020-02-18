@@ -151,14 +151,20 @@ const Burn = ({ token, avatar, onClose }) => {
       onClose();
       setLoading(false);
     } catch (e) {
-      const message = e.message;
+      let message;
+
+      if (/Could not communicate with full node or other external service/.test(e.error)) {
+        message = "Could not communicate with API. Please try again.";
+      } else {
+        message = e.message || e.error || JSON.stringify(e);
+      }
 
       notification.error({
         message: "Error",
         description: message,
-        duration: 2
+        duration: 3
       });
-      console.error(e.message);
+      console.error(e);
       setLoading(false);
     }
   }

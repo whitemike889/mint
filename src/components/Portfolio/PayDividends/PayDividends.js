@@ -92,21 +92,24 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
   const [loading, setLoading] = useState(false);
   const [tokenInfo, setTokenInfo] = useState(token);
   const [tokenNotFound, setTokenNotFound] = useState(false);
+  const [lastSearchedTokenId, setLastSearchedTokenId] = useState("");
 
   const { stats } = useDividendsStats({
     token: tokenInfo,
     amount: formData.amount,
     setLoading,
-    advancedOptions
+    advancedOptions,
+    disabled: !/^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) || !tokenInfo
   });
 
   const submitEnabled =
-    formData.tokenId &&
+    /^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) &&
     formData.amount > DUST &&
     (!stats.maxAmount || formData.amount <= stats.maxAmount) &&
     (!advancedOptions ||
       !advancedOptions.opReturnMessage ||
-      advancedOptions.opReturnMessage.length <= 60);
+      advancedOptions.opReturnMessage.length <= 60) &&
+    tokenInfo;
 
   if (formData.maxAmountChecked && stats.maxAmount !== formData.amount) {
     setFormData({
@@ -149,39 +152,70 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
         onClose();
       }
     } catch (e) {
+      let message;
+
+      if (/don't have the minting baton/.test(e.message)) {
+        message = e.message;
+      } else if (/Invalid BCH address/.test(e.message)) {
+        message = "Invalid BCH address";
+      } else if (/64: dust/.test(e.message)) {
+        message = "Small amount";
+      } else if (/Balance 0/.test(e.message)) {
+        message = "Balance of sending address is zero";
+      } else if (/Insufficient funds/.test(e.message)) {
+        message = "Insufficient funds.";
+      } else if (!e.error) {
+        message = `Transaction failed: no response from ${getRestUrl()}.`;
+      } else if (/Could not communicate with full node or other external service/.test(e.error)) {
+        message = "Could not communicate with API. Please try again.";
+      } else {
+        message = e.message || e.error || JSON.stringify(e);
+      }
+
       notification.error({
         message: "Error",
         description: (
-          <Paragraph>Unable to schedule dividend payment. Please, try again later.</Paragraph>
+          <Paragraph>
+            Unable to schedule dividend payment. Please, try again later. Cause: {message}
+          </Paragraph>
         ),
         duration: 2
       });
-      console.error(e.message);
+      console.error(e);
       setLoading(false);
     }
   }
 
   const handleChange = e => {
     const { value, name } = e.target;
-    const updatedFormData = { ...formData, dirty: true, maxAmountChecked: false, [name]: value };
-    setFormData(updatedFormData);
+    setFormData(data => ({ ...data, dirty: true, maxAmountChecked: false, [name]: value }));
   };
 
-  const handleBlurOnTokenId = async tokenId => {
-    setLoading(true);
-    try {
-      const tokenDetails = await SLP.Utils.list(tokenId);
-      if (tokenDetails.id !== "not found") {
-        setTokenInfo({ info: tokenDetails, tokenId: tokenId, isFromInput: true });
-        setTokenNotFound(false);
-      } else {
-        setTokenNotFound(true);
-        setTokenInfo(undefined);
+  const search = async () => {
+    const tokenId = formData.tokenId;
+    if (/^[A-Fa-f0-9]{64}$/g.test(tokenId)) {
+      setLoading(true);
+      try {
+        const tokenDetails = await SLP.Utils.list(tokenId);
+        if (tokenDetails.id !== "not found") {
+          setTokenInfo({ ...tokenDetails, tokenId: tokenId, isFromInput: true });
+          setTokenNotFound(false);
+          setFormData(data => ({
+            ...data,
+            dirty: false
+          }));
+        } else {
+          setTokenNotFound(true);
+          setTokenInfo(undefined);
+          setLastSearchedTokenId(tokenId);
+        }
+      } catch (e) {
+        console.error(e);
       }
-    } catch (e) {
-      console.error(e.message);
+      setLoading(false);
+    } else {
+      setLastSearchedTokenId(tokenId ? tokenId : " ");
     }
-    setLoading(false);
   };
 
   const onMaxAmount = async () => {
@@ -207,6 +241,8 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
     });
     setAdvancedOptions(options);
   };
+
+  const tokenIdRef = React.useRef(null);
 
   return (
     <StyledPayDividends>
@@ -321,31 +357,103 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
                         {!token && (
                           <>
                             <Form.Item
-                              validateStatus={formData.dirty && tokenNotFound ? "error" : ""}
-                              help={
-                                formData.dirty && tokenNotFound
-                                  ? "Token not found. Try a different Token ID."
+                              validateStatus={
+                                formData.dirty &&
+                                (!tokenInfo && lastSearchedTokenId) &&
+                                (!/^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) ||
+                                  (tokenNotFound &&
+                                    lastSearchedTokenId === formData.tokenId &&
+                                    /^[A-Fa-f0-9]{64}$/g.test(formData.tokenId))) &&
+                                !loading
+                                  ? "error"
                                   : ""
                               }
+                              help={
+                                formData.dirty &&
+                                (!tokenInfo && lastSearchedTokenId) &&
+                                (!/^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) ||
+                                  (tokenNotFound &&
+                                    lastSearchedTokenId === formData.tokenId &&
+                                    /^[A-Fa-f0-9]{64}$/g.test(formData.tokenId))) &&
+                                !loading
+                                  ? tokenNotFound &&
+                                    lastSearchedTokenId === formData.tokenId &&
+                                    /^[A-Fa-f0-9]{64}$/g.test(formData.tokenId)
+                                    ? "Token not found. Try a different Token ID."
+                                    : "Invalid Token ID"
+                                  : /^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) && !tokenInfo
+                                  ? "Click on search"
+                                  : ""
+                              }
+                              required
                             >
                               <Input
                                 prefix={<Icon type="block" />}
                                 placeholder="Token ID"
                                 name="tokenId"
                                 onChange={e => handleChange(e)}
-                                onBlur={e => handleBlurOnTokenId(e.target.value)}
+                                disabled={!tokenNotFound && tokenInfo}
+                                ref={tokenIdRef}
                                 required
                                 autoComplete="off"
                                 type="text"
+                                addonAfter={
+                                  !tokenNotFound && tokenInfo ? (
+                                    <Button
+                                      ghost
+                                      type="link"
+                                      icon="edit"
+                                      onClick={e => {
+                                        setTokenNotFound(false);
+                                        setTokenInfo(undefined);
+
+                                        tokenIdRef.current.handleReset(e);
+                                        setFormData(data => ({
+                                          ...data,
+                                          dirty: false,
+                                          maxAmountChecked: false,
+                                          tokenId: null,
+                                          maxAmount: 0,
+                                          amount: ""
+                                        }));
+                                        setLastSearchedTokenId("");
+                                        setAdvancedOptions({
+                                          ignoreOwnAddress: true,
+                                          addressesToExclude: [{ address: "", valid: null }]
+                                        });
+                                      }}
+                                    />
+                                  ) : (
+                                    <Button
+                                      ghost
+                                      type="link"
+                                      icon="search"
+                                      onClick={() => search()}
+                                    />
+                                  )
+                                }
                               />
                             </Form.Item>
                           </>
                         )}
                         <FormItemWithMaxAddon
                           style={{ margin: 0 }}
-                          validateStatus={formData.dirty && !submitEnabled ? "error" : ""}
+                          disabled={!/^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) || !tokenInfo}
+                          validateStatus={
+                            formData.dirty &&
+                            !submitEnabled &&
+                            /^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) &&
+                            tokenInfo &&
+                            !loading
+                              ? "error"
+                              : ""
+                          }
                           help={
-                            formData.dirty && !submitEnabled
+                            formData.dirty &&
+                            !submitEnabled &&
+                            /^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) &&
+                            tokenInfo &&
+                            !loading
                               ? `Must be greater than ${DUST} BCH ${
                                   stats.maxAmount > 0
                                     ? `and lower or equal to ${stats.maxAmount}`
@@ -360,7 +468,8 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
                             placeholder: "Amount",
                             onChange: e => handleChange(e),
                             required: true,
-                            value: formData.amount
+                            value: formData.amount,
+                            disabled: !/^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) || !tokenInfo
                           }}
                         />
                       </Form>
@@ -384,6 +493,7 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
                       <AdvancedOptions
                         advancedOptions={advancedOptions}
                         setAdvancedOptions={setAdvancedOptionsAndCalcEligibles}
+                        disabled={!/^[A-Fa-f0-9]{64}$/g.test(formData.tokenId) || !tokenInfo}
                       />
                     </Col>
                     <Col span={24}>

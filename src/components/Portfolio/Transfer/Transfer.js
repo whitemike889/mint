@@ -7,6 +7,7 @@ import Paragraph from "antd/lib/typography/Paragraph";
 import sendToken from "../../../utils/broadcastTransaction";
 import { PlaneIcon } from "../../Common/CustomIcons";
 import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs";
+import { getRestUrl } from "../../../utils/withSLP";
 
 const Transfer = ({ token, onClose }) => {
   const { wallet } = React.useContext(WalletContext);
@@ -56,8 +57,12 @@ const Transfer = ({ token, onClose }) => {
         message = e.message;
       } else if (/has no matching Script/.test(e.message)) {
         message = "Invalid address";
+      } else if (!e.error) {
+        message = `Transaction failed: no response from ${getRestUrl()}.`;
+      } else if (/Could not communicate with full node or other external service/.test(e.error)) {
+        message = "Could not communicate with API. Please try again.";
       } else {
-        message = e.message;
+        message = e.message || e.error || JSON.stringify(e);
       }
 
       notification.error({
@@ -65,7 +70,7 @@ const Transfer = ({ token, onClose }) => {
         description: message,
         duration: 2
       });
-      console.error(e.message);
+      console.error(e);
       setLoading(false);
     }
   }

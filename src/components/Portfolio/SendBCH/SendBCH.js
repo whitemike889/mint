@@ -9,7 +9,7 @@ import { QRCode } from "../../Common/QRCode";
 import { sendBch, calcFee } from "../../../utils/sendBch";
 import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs";
 import getTransactionHistory from "../../../utils/getTransactionHistory";
-import withSLP from "../../../utils/withSLP";
+import withSLP, { getRestUrl } from "../../../utils/withSLP";
 
 export const StyledButtonWrapper = styled.div`
   display: flex;
@@ -63,14 +63,22 @@ const SendBCH = ({ onClose, outerAction }) => {
 
       onClose();
     } catch (e) {
-      const message = e.message;
+      let message;
+
+      if (!e.error) {
+        message = `Transaction failed: no response from ${getRestUrl()}.`;
+      } else if (/Could not communicate with full node or other external service/.test(e.error)) {
+        message = "Could not communicate with API. Please try again.";
+      } else {
+        message = e.message || e.error || JSON.stringify(e);
+      }
 
       notification.error({
         message: "Error",
         description: message,
         duration: 2
       });
-      console.error(e.message);
+      console.error(e);
     }
 
     setLoading(false);
@@ -114,14 +122,15 @@ const SendBCH = ({ onClose, outerAction }) => {
         });
       setHistory(resp);
     } catch (err) {
-      const message = err.message;
+      const message = err.message || err.error || JSON.stringify(err);
 
       notification.error({
         message: "Error",
         description: message,
         duration: 2
       });
-      console.error(err.message);
+
+      console.error(err);
     }
 
     setLoading(false);
