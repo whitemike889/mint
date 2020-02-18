@@ -1,7 +1,20 @@
 import * as React from "react";
 import styled from "styled-components";
+import { debounce } from "lodash";
 import { StyledCollapse } from "../../Common/StyledCollapse";
-import { Collapse, Row, Col, Checkbox, Divider, List, Badge, Icon, Button } from "antd";
+import {
+  Collapse,
+  Row,
+  Col,
+  Checkbox,
+  List,
+  Badge,
+  Icon,
+  Button,
+  Form,
+  Input,
+  Tooltip
+} from "antd";
 import { FormItemWithQRCodeAddon, AddressValidators } from "../EnhancedInputs";
 
 const StyledButton = styled(Button)`
@@ -29,7 +42,11 @@ const StyledAdvancedOptions = styled.div`
   }
 `;
 
-export const AdvancedOptions = ({ advancedOptions, setAdvancedOptions }) => {
+export const AdvancedOptions = ({ advancedOptions, setAdvancedOptions, disabled }) => {
+  const setOpReturnMessage = React.useCallback(
+    debounce(opReturnMessage => setAdvancedOptions({ ...advancedOptions, opReturnMessage }))
+  );
+
   const updateAddressesToExclude = (address, index) => {
     const addresses = [...advancedOptions.addressesToExclude];
     const singleUpdate = (address || "").indexOf(",") === -1;
@@ -77,70 +94,103 @@ export const AdvancedOptions = ({ advancedOptions, setAdvancedOptions }) => {
     });
   };
 
+  const opReturnMessageError =
+    advancedOptions &&
+    advancedOptions.opReturnMessage &&
+    advancedOptions.opReturnMessage.length > 60
+      ? "OP_RETURN messages on dividend payments with this tool are currently limited to 60 characters."
+      : "";
+
   return (
     <StyledAdvancedOptions>
-      <StyledCollapse>
-        <Collapse.Panel header="Advanced options">
-          <Row>
-            <Col span={24}>
-              <Checkbox
-                onChange={() =>
-                  setAdvancedOptions({
-                    ...advancedOptions,
-                    ignoreOwnAddress: !advancedOptions.ignoreOwnAddress
-                  })
-                }
-                checked={advancedOptions.ignoreOwnAddress}
-              >
-                Ignore own address
-              </Checkbox>
-            </Col>
+      <StyledCollapse {...(disabled ? { activeKey: 1 } : {})}>
+        <Collapse.Panel key={0} disabled={disabled} header="Advanced options">
+          <Form>
+            <Row>
+              <Col span={24}>
+                <Form.Item
+                  validateStatus={opReturnMessageError ? "error" : ""}
+                  help={opReturnMessageError}
+                  colon={false}
+                  label={
+                    <Tooltip title="Recipients, and anyone else, can see this message on the blockchain. Forever.">
+                      OP_RETURN message <Icon type="question-circle" />
+                    </Tooltip>
+                  }
+                >
+                  <Input
+                    placeholder="Describe your transaction"
+                    onChange={e => setOpReturnMessage(e.target.value)}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
             <br />
-            <br />
-            <Col span={24}>
-              <Divider orientation="left">Addresses to exclude</Divider>
-              <List
-                dataSource={advancedOptions.addressesToExclude}
-                renderItem={(addressToExclude, index) => (
-                  <List.Item key={addressToExclude.address}>
-                    <Badge
-                      count={
-                        index > 0 ? (
-                          <Icon
-                            type="close-circle"
-                            style={{ color: "#f5222d" }}
-                            onClick={() => removeAddress(index)}
-                          />
-                        ) : null
-                      }
-                    >
-                      <FormItemWithQRCodeAddon
-                        validateStatus={addressToExclude.valid === false ? "error" : ""}
-                        help={
-                          addressToExclude.valid === false
-                            ? "Must be a valid BCH or SLP address"
-                            : ""
+            <Row>
+              <Col span={24}>
+                <Form.Item
+                  colon={false}
+                  label={
+                    <Tooltip title="Addresses to exclude from dividend payment. Add addresses one at a time, or input a comma separated list into one field.">
+                      Addresses to exclude <Icon type="question-circle" />
+                    </Tooltip>
+                  }
+                >
+                  <Checkbox
+                    onChange={() =>
+                      setAdvancedOptions({
+                        ...advancedOptions,
+                        ignoreOwnAddress: !advancedOptions.ignoreOwnAddress
+                      })
+                    }
+                    checked={advancedOptions.ignoreOwnAddress}
+                  >
+                    Ignore own address
+                  </Checkbox>
+                </Form.Item>
+                <List
+                  dataSource={advancedOptions.addressesToExclude}
+                  renderItem={(addressToExclude, index) => (
+                    <List.Item key={addressToExclude.address}>
+                      <Badge
+                        count={
+                          index > 0 ? (
+                            <Icon
+                              type="close-circle"
+                              style={{ color: "#f5222d" }}
+                              onClick={() => removeAddress(index)}
+                            />
+                          ) : null
                         }
-                        onScan={result => updateAddressesToExclude(result, index)}
-                        inputProps={{
-                          placeholder: "BCH or SLP address, comma separated (optionally)",
-                          onChange: e => updateAddressesToExclude(e.target.value, index),
-                          required: true,
-                          value: advancedOptions.addressesToExclude[index]
-                            ? advancedOptions.addressesToExclude[index].address
-                            : ""
-                        }}
-                      />
-                    </Badge>
-                  </List.Item>
-                )}
-              />
-              <StyledButton onClick={addAddress}>
-                <Icon type="plus" />
-                Add Address
-              </StyledButton>
-            </Col>
-          </Row>
+                      >
+                        <FormItemWithQRCodeAddon
+                          validateStatus={addressToExclude.valid === false ? "error" : ""}
+                          help={
+                            addressToExclude.valid === false
+                              ? "Must be a valid BCH or SLP address"
+                              : ""
+                          }
+                          onScan={result => updateAddressesToExclude(result, index)}
+                          inputProps={{
+                            placeholder: "BCH or SLP address",
+                            onChange: e => updateAddressesToExclude(e.target.value, index),
+                            required: true,
+                            value: advancedOptions.addressesToExclude[index]
+                              ? advancedOptions.addressesToExclude[index].address
+                              : ""
+                          }}
+                        />
+                      </Badge>
+                    </List.Item>
+                  )}
+                />
+                <StyledButton onClick={addAddress}>
+                  <Icon type="plus" />
+                  Add Address
+                </StyledButton>
+              </Col>
+            </Row>
+          </Form>
         </Collapse.Panel>
       </StyledCollapse>
     </StyledAdvancedOptions>

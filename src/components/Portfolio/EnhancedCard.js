@@ -24,8 +24,9 @@ const GlobalStyle = createGlobalStyle`
     }
 
     .ant-alert {
-      background-color: #FFFFFF !important;
-      border: none !important;
+      background: #fbfcfd !important;
+      border: 1px solid #eaedf3 !important;
+      // padding-left: 40px !important;
 
       * {
         color: rgb(62, 63, 66) !important;
@@ -33,7 +34,12 @@ const GlobalStyle = createGlobalStyle`
     }
 `;
 
-const StyledWrapper = styled.div``;
+const StyledWrapper = styled.div`
+  @media (max-width: 768px) {
+    text-align: -webkit-center;
+    text-align: -moz-center;
+  }
+`;
 
 const StyledEnhancedCard = styled(Card)`
   border-radius: 8px;
@@ -133,6 +139,16 @@ export const StyledModal = styled(Modal)`
       ${StyledEnhancedCard} {
         margin-top: 0 !important;
         height: auto !important;
+        ${props =>
+          props.visible
+            ? `
+                .ant-card-body {
+                  &> * {
+                    overflow-y: hidden;
+                  }
+                }
+            `
+            : ""}
       }
     }
   }

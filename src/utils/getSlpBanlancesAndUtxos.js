@@ -37,7 +37,6 @@ const decodeTxOut = withSLP((SLP, txOut) => {
   const vout = parseInt(txOut.vout, 10);
 
   const script = SLP.Script.toASM(Buffer.from(txOut.tx.vout[0].scriptPubKey.hex, "hex")).split(" ");
-
   const type = getSLPTxType(script);
 
   if (type === "genesis") {
@@ -107,7 +106,7 @@ const decodeTokenMetadata = withSLP((SLP, txDetails) => {
         ? parseInt(script[8].slice(3), 10)
         : parseInt(script[8], 16),
       documentUri: Buffer.from(script[6], "hex").toString("ascii"),
-      documentHash: Buffer.from(script[7], "hex").toString("ascii")
+      documentHash: script[7].startsWith("OP_0") ? "" : script[7]
     };
   } else {
     throw new Error("Invalid tx type");

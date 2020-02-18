@@ -19,7 +19,7 @@ export const StyledButtonWrapper = styled.div`
 `;
 
 const SendBCH = ({ onClose, outerAction }) => {
-  const { wallet, balances, slpBalancesAndUtxos } = React.useContext(WalletContext);
+  const { wallet, balances, slpBalancesAndUtxos, tokens } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: true,
     value: "",
@@ -108,7 +108,8 @@ const SendBCH = ({ onClose, outerAction }) => {
       const details = await SLP.Address.details(wallet.cashAddresses);
       const resp = await getTransactionHistory(
         wallet.cashAddresses,
-        details.map(detail => detail.transactions)
+        details.map(detail => detail.transactions),
+        tokens
       );
       await fetch("https://markets.api.bitcoin.com/live/bitcoin")
         .then(response => {
@@ -253,7 +254,12 @@ const SendBCH = ({ onClose, outerAction }) => {
                   {history.bchTransactions.map(el => (
                     <div
                       style={{
-                        background: el.transactionBalance > 0 ? "#D4EFFC" : " #ffd59a",
+                        background:
+                          el.transactionBalance.type !== "Unknown"
+                            ? el.transactionBalance.balance > 0
+                              ? "#D4EFFC"
+                              : " #ffd59a"
+                            : "#D3D3D3",
                         color: "black",
                         borderRadius: "12px",
                         marginBottom: "18px",
@@ -267,18 +273,64 @@ const SendBCH = ({ onClose, outerAction }) => {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <p>{el.transactionBalance > 0 ? "Received" : "Sent"}</p>
+                        <p>{el.transactionBalance.type}</p>
                         <p>{el.date.toLocaleString()}</p>
+                        {el.transactionBalance.type !== "Unknown" && (
+                          <>
+                            {" "}
+                            <p>{`${el.transactionBalance.balance > 0 ? "+" : ""}${
+                              el.transactionBalance.balance
+                            } BCH`}</p>
+                            <p>{`${el.transactionBalance.balance > 0 ? "+$" : "-$"}${
+                              (Math.abs(el.transactionBalance.balance) / bchToDollar)
+                                .toFixed(2)
+                                .toString() === "0.00"
+                                ? 0.01
+                                : (Math.abs(el.transactionBalance.balance) / bchToDollar).toFixed(2)
+                            } USD`}</p>
+                            {el.transactionBalance.type.includes("MintDividend") && (
+                              <>
+                                <h4>Outputs:</h4>
+                                {el.transactionBalance.outputs.map(output => (
+                                  <>
+                                    <Paragraph
+                                      onClick={e => e.preventDefault()}
+                                      small
+                                      ellipsis
+                                      copyable={{ text: output.address }}
+                                      style={{
+                                        whiteSpace: "nowrap",
+                                        color: "black",
+                                        maxWidth: "90%"
+                                      }}
+                                    >
+                                      {`Address: ${output.address}`}
+                                    </Paragraph>
+                                    <p style={{ marginTop: "-20px" }}>{`amount: ${
+                                      output.amount > 0 ? "+" : ""
+                                    }${output.amount} BCH`}</p>
+                                  </>
+                                ))}
 
-                        <p>{`${el.transactionBalance > 0 ? "+" : ""}${
-                          el.transactionBalance
-                        } BCH`}</p>
-                        <p>{`${el.transactionBalance > 0 ? "+$" : "-$"}${
-                          (Math.abs(el.transactionBalance) / bchToDollar).toFixed(2).toString() ===
-                          "0.00"
-                            ? 0.01
-                            : (Math.abs(el.transactionBalance) / bchToDollar).toFixed(2)
-                        } USD`}</p>
+                                <Paragraph
+                                  onClick={e => e.preventDefault()}
+                                  small
+                                  ellipsis
+                                  copyable={{ text: el.transactionBalance.metaData.tokenId }}
+                                  style={{ whiteSpace: "nowrap", color: "black", maxWidth: "90%" }}
+                                >
+                                  {`tokenId: ${el.transactionBalance.metaData.tokenId}`}
+                                </Paragraph>
+
+                                <p>{`Message: ${
+                                  el.transactionBalance.metaData.message
+                                    ? el.transactionBalance.metaData.message
+                                    : "none"
+                                }`}</p>
+                              </>
+                            )}
+                          </>
+                        )}
 
                         <Paragraph
                           small

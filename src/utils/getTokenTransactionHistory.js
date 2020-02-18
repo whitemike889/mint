@@ -1,31 +1,60 @@
 import withSLP from "./withSLP";
+import chunk from "lodash/chunk";
+import { decodeRawSlpTrasactionsByTxs } from "./decodeRawSlpTransactions";
 
-const getTokenTransactionHistory = async (SLP, slpAddresses, tokenId) => {
+export const getUnconfirmedTxs = withSLP(async (SLP, slpAddresses) => {
+  const lastTransactions = await SLP.Address.transactions(slpAddresses);
+
+  const goToNextPage = transactions => {
+    const confirmedTxs = transactions.map(transactionsByAddress =>
+      transactionsByAddress.txs.filter(tx => tx.confirmations !== 0)
+    );
+    return Math.min(...confirmedTxs.map(txs => txs.length)) === 0;
+  };
+
+  const concatenatedUniqueUnconfirmedTransactions = transactions =>
+    Object.values(
+      transactions
+        .map(transactionsByAddress =>
+          transactionsByAddress.txs.filter(tx => tx.confirmations === 0)
+        )
+        .reduce((a, b) => a.concat(b), [])
+        .reduce((acc, cur) => ({ ...acc, ...{ [cur.txid]: cur } }), {})
+    );
+
+  const unconfirmedTxs = concatenatedUniqueUnconfirmedTransactions(lastTransactions);
+  if (goToNextPage(lastTransactions)) {
+    const numerOfPages = Math.max(...lastTransactions.map(transaction => transaction.pagesTotal));
+    for (let page = 1; page < numerOfPages; page++) {
+      const txsOnPage = await SLP.Address.transactions(slpAddresses, page);
+      unconfirmedTxs.concat(concatenatedUniqueUnconfirmedTransactions(txsOnPage));
+      if (!goToNextPage(txsOnPage)) break;
+    }
+  }
+  return unconfirmedTxs;
+});
+
+export const getConfirmedSlpTxsByTokenId = withSLP(async (SLP, slpAddresses, tokenId) => {
+  const transactions = await SLP.Utils.bulkTransactions(
+    slpAddresses.map(address => ({ tokenId, address }))
+  );
+  return transactions;
+});
+
+export const getAllConfirmedSlpTxs = withSLP(async (SLP, slpAddresses, tokens) => {
+  const transactions = await SLP.Utils.bulkTransactions(
+    tokens
+      .map(token => slpAddresses.map(address => ({ tokenId: token.tokenId, address })))
+      .reduce((a, b) => a.concat(b), [])
+  );
+  return transactions;
+});
+
+const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo) => {
   try {
-    const query = {
-      v: 3,
-      q: {
-        db: ["c", "u"],
-        find: {
-          $or: [
-            {
-              "in.e.a": { $in: slpAddresses }
-            },
-            {
-              "out.e.a": { $in: slpAddresses }
-            }
-          ],
-          "slp.detail.tokenIdHex": tokenId
-        },
-        sort: {
-          "blk.t": -1
-        },
-        limit: 30
-      },
-      r: {
-        f: "[.[] | { txid: .tx.h, tokenDetails: .slp, blk: .blk } ]"
-      }
-    };
+    const { tokenId } = tokenInfo;
+
+    const Xor = (x, y) => (x || y) && !(x && y);
 
     const calculateTransactionBalance = outputs => {
       if (outputs.length === 1 && slpAddresses.includes(outputs[0].address))
@@ -46,91 +75,108 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenId) => {
         return +outputs.find(element => slpAddresses.includes(element.address)).amount;
     };
 
-    const slpDbInstance = SLP.SLPDB;
-    const queryResults = await slpDbInstance.get(query);
     const tokenTransactionHistory = {
       confirmed: [],
       unconfirmed: []
     };
 
-    if (queryResults.c.length) {
-      tokenTransactionHistory.confirmed = queryResults.c
+    const unconfirmedTxs = await getUnconfirmedTxs(slpAddresses);
+
+    if (unconfirmedTxs.length > 0) {
+      const decodedTxs = await decodeRawSlpTrasactionsByTxs(unconfirmedTxs, tokenInfo);
+
+      tokenTransactionHistory.unconfirmed = decodedTxs
+        .slice(0, 30)
+        .map(txidDetail => ({
+          txid: txidDetail.txid,
+          detail: txidDetail.tokenDetails,
+          balance: calculateTransactionBalance(txidDetail.tokenDetails.outputs),
+          confirmations: 0,
+          date: new Date()
+        }))
         .sort((x, y) => {
-          if (
-            x.tokenDetails.detail.transactionType === "GENESIS" ||
-            y.tokenDetails.detail.transactionType === "GENESIS"
-          ) {
+          if (Xor(x.detail.transactionType === "GENESIS", y.detail.transactionType === "GENESIS")) {
             return (
-              +(x.tokenDetails.detail.transactionType === "GENESIS") -
-              +(y.tokenDetails.detail.transactionType === "GENESIS")
+              +(x.detail.transactionType === "GENESIS") - +(y.detail.transactionType === "GENESIS")
             );
           }
           if (
-            y.blk.t === x.blk.t &&
-            (x.tokenDetails.detail.transactionType === "MINT" ||
-              y.tokenDetails.detail.transactionType === "MINT") &&
-            x.tokenDetails.detail.transactionType !== "GENESIS" &&
-            y.tokenDetails.detail.transactionType !== "GENESIS"
+            Xor(x.detail.transactionType === "MINT", y.detail.transactionType === "MINT") &&
+            x.detail.transactionType !== "GENESIS" &&
+            y.detail.transactionType !== "GENESIS"
           ) {
-            return (
-              +(x.tokenDetails.detail.transactionType === "MINT") -
-              +(y.tokenDetails.detail.transactionType === "MINT")
-            );
-          }
-          if (y.blk.t === x.blk.t) {
-            return -1;
+            return +(x.detail.transactionType === "MINT") - +(y.detail.transactionType === "MINT");
           } else {
-            return y.blk.t - x.blk.t;
+            return 1;
           }
-        })
-        .map(el => ({
-          txid: el.txid,
-          detail: el.tokenDetails.detail,
-          balance: calculateTransactionBalance(el.tokenDetails.detail.outputs),
-          date: new Date(Number(el.blk.t) * 1000),
-          confirmed: true
-        }));
+        });
     }
 
-    if (queryResults.u.length) {
-      tokenTransactionHistory.unconfirmed = queryResults.u
+    const remainingNumberTxsDetails = 30 - tokenTransactionHistory.unconfirmed.length;
+
+    const transactions = await getConfirmedSlpTxsByTokenId(slpAddresses, tokenId);
+
+    if (
+      transactions.reduce((a, b) => a.concat(b), []).length > 0 &&
+      remainingNumberTxsDetails > 0
+    ) {
+      const lastNtrancations = (N, transactions) => transactions.map(el => el.slice(0, N));
+      const slicedTransactions = lastNtrancations(remainingNumberTxsDetails, transactions);
+      const concatenatedTransactions = slicedTransactions.reduce((a, b) => a.concat(b), []);
+      const uniqueTxids = [
+        ...new Set(concatenatedTransactions.map(transaction => transaction.txid))
+      ];
+
+      const revertChunk = chunkedArray =>
+        chunkedArray.reduce((unchunkedArray, chunk) => [...unchunkedArray, ...chunk], []);
+
+      const txidChunks = chunk(uniqueTxids, 20);
+      const txidDetails = revertChunk(
+        await Promise.all(txidChunks.map(txidChunk => SLP.Transaction.details(txidChunk)))
+      );
+
+      tokenTransactionHistory.confirmed = txidDetails
+        .map(txidDetail => ({
+          txid: txidDetail.txid,
+          detail: concatenatedTransactions.find(el => el.txid === txidDetail.txid).tokenDetails
+            .detail,
+          balance: calculateTransactionBalance(
+            concatenatedTransactions.find(el => el.txid === txidDetail.txid).tokenDetails.detail
+              .outputs
+          ),
+          confirmations: txidDetail.confirmations,
+          date: new Date(txidDetail.time * 1000),
+          time: txidDetail.time
+        }))
         .sort((x, y) => {
-          if (
-            x.tokenDetails.detail.transactionType === "GENESIS" ||
-            y.tokenDetails.detail.transactionType === "GENESIS"
-          ) {
+          if (Xor(x.detail.transactionType === "GENESIS", y.detail.transactionType === "GENESIS")) {
             return (
-              +(x.tokenDetails.detail.transactionType === "GENESIS") -
-              +(y.tokenDetails.detail.transactionType === "GENESIS")
+              +(x.detail.transactionType === "GENESIS") - +(y.detail.transactionType === "GENESIS")
             );
           }
           if (
-            (x.tokenDetails.detail.transactionType === "MINT" ||
-              y.tokenDetails.detail.transactionType === "MINT") &&
-            x.tokenDetails.detail.transactionType !== "GENESIS" &&
-            y.tokenDetails.detail.transactionType !== "GENESIS"
+            y.time === x.time &&
+            Xor(x.detail.transactionType === "MINT", y.detail.transactionType === "MINT") &&
+            x.detail.transactionType !== "GENESIS" &&
+            y.detail.transactionType !== "GENESIS"
           ) {
-            return (
-              +(x.tokenDetails.detail.transactionType === "MINT") -
-              +(y.tokenDetails.detail.transactionType === "MINT")
-            );
+            return +(x.detail.transactionType === "MINT") - +(y.detail.transactionType === "MINT");
+          }
+          if (y.time === x.time) {
+            return 1;
           } else {
-            return -1;
+            return y.time - x.time;
           }
         })
-        .map(el => ({
-          txid: el.txid,
-          detail: el.tokenDetails.detail,
-          balance: calculateTransactionBalance(el.tokenDetails.detail.outputs),
-          date: new Date(),
-          confirmed: false
-        }));
+        .slice(0, remainingNumberTxsDetails);
     }
-    const { confirmed, unconfirmed } = tokenTransactionHistory;
 
-    return unconfirmed.concat(confirmed);
-  } catch (e) {
-    console.log("error :", e);
+    const { unconfirmed, confirmed } = tokenTransactionHistory;
+    const tokenHistory = unconfirmed.concat(confirmed);
+
+    return tokenHistory;
+  } catch (err) {
+    console.log("err", err);
     return [];
   }
 };

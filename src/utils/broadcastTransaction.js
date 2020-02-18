@@ -5,9 +5,10 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
     const NETWORK = process.env.REACT_APP_NETWORK;
 
     const TRANSACTION_TYPE =
-      (args.additionalTokenQty && args.tokenId && "IS_MINTING") ||
+      ((args.additionalTokenQty || args.burnBaton) && args.tokenId && "IS_MINTING") ||
       (args.initialTokenQty && args.symbol && args.name && "IS_CREATING") ||
-      (args.amount && args.tokenId && args.tokenReceiverAddress && "IS_SENDING");
+      (args.amount && args.tokenId && args.tokenReceiverAddress && "IS_SENDING") ||
+      (args.amount && args.tokenId && "IS_BURNING");
 
     const { Path245, Path145 } = wallet;
 
@@ -20,7 +21,7 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
 
     switch (TRANSACTION_TYPE) {
       case "IS_CREATING":
-        config.batonReceiverAddress = Path245.slpAddress;
+        config.batonReceiverAddress = config.fixedSupply === true ? null : Path245.slpAddress;
         config.decimals = config.decimals || 0;
         config.documentUri = config.docUri;
         config.tokenReceiverAddress = Path245.slpAddress;
@@ -34,6 +35,9 @@ const broadcastTransaction = async (SLPInstance, wallet, { ...args }) => {
       case "IS_SENDING":
         config.tokenReceiverAddress = args.tokenReceiverAddress;
         createTransaction = async config => SLPInstance.TokenType1.send(config);
+        break;
+      case "IS_BURNING":
+        createTransaction = async config => SLPInstance.TokenType1.burn(config);
         break;
       default:
         break;
