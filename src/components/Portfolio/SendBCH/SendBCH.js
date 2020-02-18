@@ -9,7 +9,7 @@ import { QRCode } from "../../Common/QRCode";
 import { sendBch, calcFee } from "../../../utils/sendBch";
 import { FormItemWithMaxAddon, FormItemWithQRCodeAddon } from "../EnhancedInputs";
 import getTransactionHistory from "../../../utils/getTransactionHistory";
-import withSLP from "../../../utils/withSLP";
+import withSLP, { getRestUrl } from "../../../utils/withSLP";
 
 export const StyledButtonWrapper = styled.div`
   display: flex;
@@ -63,7 +63,13 @@ const SendBCH = ({ onClose, outerAction }) => {
 
       onClose();
     } catch (e) {
-      const message = e.message;
+      let message;
+
+      if (!e.error) {
+        message = `Transaction failed. This error is probably caused by ${getRestUrl()} being down.`;
+      } else {
+        message = e.message;
+      }
 
       notification.error({
         message: "Error",
