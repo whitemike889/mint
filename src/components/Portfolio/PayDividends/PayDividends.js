@@ -172,6 +172,9 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
         message = "Balance of sending address is zero";
       } else if (/Insufficient funds/.test(e.message)) {
         message = "Insufficient funds.";
+      }
+      if (!e.error) {
+        message = `Transaction failed. This error is probably caused by ${getRestUrl()} being down.`;
       } else {
         message = e.message;
       }
