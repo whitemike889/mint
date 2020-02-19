@@ -3,10 +3,13 @@ import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./components/App";
 import { WalletProvider } from "./utils/context";
+import { HashRouter as Router } from "react-router-dom";
 
 ReactDOM.render(
   <WalletProvider>
-    <App />
+    <Router>
+      <App />
+    </Router>
   </WalletProvider>,
   document.getElementById("root")
 );

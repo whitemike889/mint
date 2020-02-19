@@ -1,5 +1,5 @@
 import React from "react";
-import { withRouter } from "react-router-dom";
+import { withRouter, useHistory } from "react-router-dom";
 import { WalletContext } from "../../utils/context";
 import {
   Input,
@@ -98,7 +98,7 @@ const StyledHashCollapse = styled.div`
   }
 `;
 
-const Create = ({ history }) => {
+const Create = () => {
   const ContextValue = React.useContext(WalletContext);
   const { wallet, balances, loading: loadingContext } = ContextValue;
   const [loading, setLoading] = React.useState(false);
@@ -115,6 +115,7 @@ const Create = ({ history }) => {
   const [hash, setHash] = React.useState("");
   const [fileList, setFileList] = React.useState();
   const [file, setFile] = React.useState();
+  const history = useHistory();
 
   const transformFile = file => {
     clear();
@@ -254,6 +255,7 @@ const Create = ({ history }) => {
         ),
         duration: 2
       });
+      history.push("/portfolio");
     } catch (e) {
       let message;
       if (e.message) {

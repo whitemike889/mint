@@ -127,7 +127,7 @@ const DividendHistory = () => {
       ) : (
         <Row type="flex" gutter={32}>
           {dividends.map(dividend => (
-            <StyledCol xl={8} lg={12} span={24}>
+            <StyledCol key={dividend.startDate} xl={8} lg={12} span={24}>
               <StyledCard
                 onClick={() => setSelected(dividend)}
                 expand={selected && selected.startDate === dividend.startDate}
@@ -216,7 +216,7 @@ const DividendHistory = () => {
                         </Descriptions.Item>
                       ) : null}
                       {dividend.txs.map((tx, index) => (
-                        <Descriptions.Item label={`Transaction ${index + 1}`}>
+                        <Descriptions.Item key={tx} label={`Transaction ${index + 1}`}>
                           <a
                             href={`https://explorer.bitcoin.com/bch/tx/${tx}`}
                             target="_blank"

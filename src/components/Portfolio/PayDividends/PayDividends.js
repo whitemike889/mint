@@ -24,6 +24,7 @@ import { AdvancedOptions } from "./AdvancedOptions";
 import { QRCode } from "../../Common/QRCode";
 import withSLP, { getRestUrl } from "../../../utils/withSLP";
 import { useDividendsStats } from "./useDividendsStats";
+import { useHistory } from "react-router";
 
 const StyledPayDividends = styled.div`
   * {
@@ -93,6 +94,7 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
   const [tokenInfo, setTokenInfo] = useState(token);
   const [tokenNotFound, setTokenNotFound] = useState(false);
   const [lastSearchedTokenId, setLastSearchedTokenId] = useState("");
+  const history = useHistory();
 
   const { stats } = useDividendsStats({
     token: tokenInfo,
@@ -138,16 +140,12 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
 
       notification.success({
         message: "Success",
-        description: (
-          <Paragraph>
-            Dividend payment created. Go to "Dividends > Dividends History" to get more
-            informations.
-          </Paragraph>
-        ),
-        duration: 4
+        description: <Paragraph>Dividend payment successfully created.</Paragraph>,
+        duration: 2
       });
 
       setLoading(false);
+      history.push("/dividends-history");
       if (onClose) {
         onClose();
       }

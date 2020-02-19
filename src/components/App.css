@@ -192,8 +192,8 @@ input.ant-input {
   }
 }
 
-.ant-menu-item.ant-menu-item-selected > span {
-  color: #5daa7e;
+.ant-menu-item.ant-menu-item-selected > * {
+  color: #5daa7e !important;
 }
 
 .ant-menu-item.ant-menu-item-selected {
