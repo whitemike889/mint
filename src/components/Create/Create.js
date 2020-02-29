@@ -264,6 +264,9 @@ const Create = ({ history }) => {
           case "Document hash must be provided as a 64 character hex string":
             message = e.message;
             break;
+          case "Transaction input BCH amount is too low.  Add more BCH inputs to fund this transaction.":
+            message = "Not enough BCH. Deposit some funds to use this feature.";
+            break;
           default:
             message = "Transaction Failed. Try again later";
             break;
