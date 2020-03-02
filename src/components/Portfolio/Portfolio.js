@@ -29,6 +29,8 @@ import { OnBoarding } from "../OnBoarding/OnBoarding";
 import getTokenTransactionHistory from "../../utils/getTokenTransactionHistory";
 import bchFlagLogo from "../../assets/4-bitcoin-cash-logo-flag.png";
 
+export const SLP_TOKEN_ICONS_URL = "https://tokens.bch.sx/64";
+
 export const StyledCollapse = styled(Collapse)`
   background: #fbfcfd !important;
   border: 1px solid #eaedf3 !important;
@@ -65,7 +67,6 @@ export default () => {
   const { wallet, tokens, loading, balances } = ContextValue;
   const [selectedToken, setSelectedToken] = useState(null);
   const [action, setAction] = useState(null);
-  const SLP_TOKEN_ICONS_URL = "https://tokens.bch.sx/64";
 
   const [loadingTokenHistory, setLoadingTokenHistory] = useState(false);
   const [tokenCardAction, setTokenCardAction] = useState("details");

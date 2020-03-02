@@ -3,6 +3,13 @@ import withSLP from "./withSLP";
 import { DUST } from "./sendDividends";
 
 export const SATOSHIS_PER_BYTE = 1.01;
+export const SEND_BCH_ERRORS = {
+  INSUFICIENT_FUNDS: 0,
+  NETWORK_ERROR: 1,
+  INSUFFICIENT_PRIORITY: 66, // ~insufficien fee
+  DOUBLE_SPENDING: 18,
+  MAX_UNCONFIRMED_TXS: 64
+};
 const NETWORK = process.env.REACT_APP_NETWORK;
 
 export const sendBch = withSLP(
@@ -63,9 +70,10 @@ export const sendBch = withSLP(
 
       // amount to send back to the remainder address.
       const remainder = Math.floor(originalAmount.minus(satoshisToSend).minus(txFee));
-
       if (remainder < 0) {
-        throw new Error(`Insufficient funds`);
+        const error = new Error(`Insufficient funds`);
+        error.code = SEND_BCH_ERRORS.INSUFICIENT_FUNDS;
+        throw error;
       }
 
       if (encodedOpReturn) {
@@ -114,6 +122,17 @@ export const sendBch = withSLP(
 
       return link;
     } catch (err) {
+      if (err.error === "insufficient priority (code 66)") {
+        err.code = SEND_BCH_ERRORS.INSUFFICIENT_PRIORITY;
+      } else if (err.error === "txn-mempool-conflict (code 18)") {
+        err.code = SEND_BCH_ERRORS.DOUBLE_SPENDING;
+      } else if (err.error === "Network Error") {
+        err.code = SEND_BCH_ERRORS.NETWORK_ERROR;
+      } else if (
+        err.error === "too-long-mempool-chain, too many unconfirmed ancestors [limit: 25] (code 64)"
+      ) {
+        err.code = SEND_BCH_ERRORS.MAX_UNCONFIRMED_TXS;
+      }
       console.log(`error: `, err);
       throw err;
     }

@@ -192,8 +192,8 @@ input.ant-input {
   }
 }
 
-.ant-menu-item.ant-menu-item-selected > span {
-  color: #5daa7e;
+.ant-menu-item.ant-menu-item-selected > * {
+  color: #5daa7e !important;
 }
 
 .ant-menu-item.ant-menu-item-selected {
@@ -244,6 +244,15 @@ input.ant-input {
 .ant-layout-sider-zero-width-trigger.ant-layout-sider-zero-width-trigger-left {
   background: #3e3f42;
   border-radius: 0 8px 8px 0;
+}
+
+.ant-btn-group .ant-btn-primary:first-child:not(:last-child) {
+  border-right-color: transparent !important;
+}
+
+.ant-btn-group .ant-btn-primary:last-child:not(:first-child),
+.ant-btn-group .ant-btn-primary + .ant-btn-primary {
+  border-left-color: #20242d !important;
 }
 
 #borderedQRCode {

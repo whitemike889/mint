@@ -24,6 +24,7 @@ import { AdvancedOptions } from "./AdvancedOptions";
 import { QRCode } from "../../Common/QRCode";
 import withSLP, { getRestUrl } from "../../../utils/withSLP";
 import { useDividendsStats } from "./useDividendsStats";
+import { useHistory } from "react-router";
 
 const StyledPayDividends = styled.div`
   * {
@@ -93,6 +94,7 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
   const [tokenInfo, setTokenInfo] = useState(token);
   const [tokenNotFound, setTokenNotFound] = useState(false);
   const [lastSearchedTokenId, setLastSearchedTokenId] = useState("");
+  const history = useHistory();
 
   const { stats } = useDividendsStats({
     token: tokenInfo,
@@ -131,34 +133,19 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
     setLoading(true);
     const { amount } = formData;
     try {
-      const link = await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, advancedOptions, {
+      await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, advancedOptions, {
         value: amount,
-        tokenId: tokenInfo.tokenId
+        token: token || tokenInfo
       });
-
-      if (!link) {
-        setLoading(false);
-
-        return notification.info({
-          message: "Info",
-          description: (
-            <Paragraph>No token holder with sufficient balance to receive dividends.</Paragraph>
-          ),
-          duration: 2
-        });
-      }
 
       notification.success({
         message: "Success",
-        description: (
-          <a href={link} target="_blank" rel="noopener noreferrer">
-            <Paragraph>Transaction successful. Click or tap here for more details</Paragraph>
-          </a>
-        ),
+        description: <Paragraph>Dividend payment successfully created.</Paragraph>,
         duration: 2
       });
 
       setLoading(false);
+      history.push("/dividends-history");
       if (onClose) {
         onClose();
       }
@@ -185,7 +172,11 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
 
       notification.error({
         message: "Error",
-        description: message,
+        description: (
+          <Paragraph>
+            Unable to schedule dividend payment. Please, try again later. Cause: {message}
+          </Paragraph>
+        ),
         duration: 2
       });
       console.error(e);
