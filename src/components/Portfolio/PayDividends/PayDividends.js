@@ -135,7 +135,7 @@ const PayDividends = (SLP, { token, onClose, bordered = false }) => {
     try {
       await sendDividends(wallet, slpBalancesAndUtxos.nonSlpUtxos, advancedOptions, {
         value: amount,
-        token: token || tokenInfo
+        token: token || { tokenId: tokenInfo.tokenId, info: tokenInfo }
       });
 
       notification.success({
