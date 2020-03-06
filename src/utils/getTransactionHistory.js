@@ -161,9 +161,11 @@ const getTransactionHistory = async (SLP, cashAddresses, transactions, tokens) =
                 input => !cashAddresses.includes(SLP.Address.toCashAddress(input.legacyAddress))
               ) === -1))
         ) {
-          const previousBalance = Math.max(
-            ...vin.map(input => +(vin[0].valueSat ? input.valueSat : input.value))
-          );
+          const previousBalance = vin
+            .map(input => +(vin[0].valueSat ? input.valueSat : input.value))
+            .filter(el => el > 546)
+            .reduce((a, b) => +a + +b, 0);
+
           return {
             balance: (
               (+vout[0].value * Math.pow(10, 8) - previousBalance) *
