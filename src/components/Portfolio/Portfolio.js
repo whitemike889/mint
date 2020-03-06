@@ -74,7 +74,7 @@ export default () => {
   const [showArchivedTokens, setShowArchivedTokens] = useState(false);
 
   const isModalOpen = (action, selectedToken) => action === "sendBCH" || selectedToken !== null;
-  console.log("slpBalancesAndUtxos :", slpBalancesAndUtxos);
+
   React.useEffect(() => {
     document.body.style.overflow = isModalOpen(action, selectedToken) ? "hidden" : "";
     return () => (document.body.style.overflow = "");
