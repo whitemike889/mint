@@ -50,6 +50,32 @@ export const getAllConfirmedSlpTxs = withSLP(async (SLP, slpAddresses, tokens) =
   return transactions;
 });
 
+const insert = (arr, index, newItem) => [...arr.slice(0, index), newItem, ...arr.slice(index)];
+
+const mockedBurnAll = txid => ({
+  txid,
+  detail: { transactionType: "BURN_ALL" },
+  vin: null,
+  vout: null,
+  balance: null,
+  confirmations: null,
+  date: null,
+  time: null
+});
+
+const mockedArrayBurnAll = txid => [
+  {
+    txid,
+    detail: { transactionType: "BURN_ALL" },
+    vin: null,
+    vout: null,
+    balance: null,
+    confirmations: null,
+    date: null,
+    time: null
+  }
+];
+
 const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtxos) => {
   try {
     const { tokenId } = tokenInfo;
@@ -255,7 +281,8 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
               }
 
               const remainingTxs = arrayUnconf.filter(
-                x => !accNoEmptyElements.reduce((a, b) => a.concat(b), []).includes(x)
+                x =>
+                  !accNoEmptyElements.reduce((a, b) => a.concat(b), []).some(e => e.txid === x.txid)
               );
               if (remainingTxs.length > 0) {
                 const remainingGenesis = remainingTxs.find(
@@ -289,22 +316,12 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                 }
               }
               if (accNoEmptyElements.length > 1) {
-                const mockedBurnAll = txid => [
-                  {
-                    txid,
-                    detail: { transactionType: "BURN_ALL" },
-                    vin: null,
-                    vout: null,
-                    balance: null,
-                    confirmations: null,
-                    date: null,
-                    time: null
-                  }
-                ];
                 const newLength = accNoEmptyElements.length * 2 - 1;
 
                 const accWithMockedBurnAll = Array.from({ length: newLength }).map((e, i) =>
-                  i % 2 === 0 ? accNoEmptyElements[i / 2] : mockedBurnAll(`unconf-${i}-burn-all`)
+                  i % 2 === 0
+                    ? accNoEmptyElements[i / 2]
+                    : mockedArrayBurnAll(`unconf-${i}-burn-all`)
                 );
                 return accWithMockedBurnAll.reduce((a, b) => a.concat(b), []);
               } else {
@@ -351,27 +368,11 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
               ) {
                 return { result: array, lastIndex: nextSentTxIndex };
               } else {
-                const insert = (arr, index, newItem) => [
-                  ...arr.slice(0, index),
-                  newItem,
-                  ...arr.slice(index)
-                ];
-
-                const mockedBurnAll = txid => ({
-                  txid,
-                  detail: { transactionType: "BURN_ALL" },
-                  vin: null,
-                  vout: null,
-                  balance: null,
-                  confirmations: null,
-                  date: null,
-                  time: null
-                });
                 const burnAllIndexes = array
                   .slice(0, nextSentTxIndex + 1)
                   .reduce((acc, cur, index) => {
                     if (
-                      !txIdInVin.includes(cur) &&
+                      !txIdInVin.some(e => e.txid === cur.txid) &&
                       cur.detail.transactionType !== "BURN_ALL" &&
                       cur.detail.transactionType !== "BURN_BATON"
                     ) {
@@ -412,20 +413,9 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
               ) {
                 return array.length > 1 ? { result: array, lastIndex: array.length - 1 } : array;
               } else {
-                const mockedBurnAll = txid => ({
-                  txid,
-                  detail: { transactionType: "BURN_ALL" },
-                  vin: null,
-                  vout: null,
-                  balance: null,
-                  confirmations: null,
-                  date: null,
-                  time: null
-                });
-
                 const burnAllIndexes = array.slice(0, array.length).reduce((acc, cur, index) => {
                   if (
-                    !txIdInVin.includes(cur) &&
+                    !txIdInVin.some(e => e.txid === cur.txid) &&
                     cur.detail.transactionType !== "BURN_ALL" &&
                     cur.detail.transactionType !== "BURN_BATON"
                   ) {
@@ -433,12 +423,6 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                   }
                   return acc;
                 }, []);
-
-                const insert = (arr, index, newItem) => [
-                  ...arr.slice(0, index),
-                  newItem,
-                  ...arr.slice(index)
-                ];
 
                 const slicedArrayWithBurnAllItems = burnAllIndexes.reduce((acc, cur, index) => {
                   return insert(acc, cur + index, mockedBurnAll(`unconf-${cur + index}-burn-all`));
@@ -670,7 +654,10 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                   }
 
                   const remainingTxs = concatDetails.filter(
-                    x => !accNoEmptyElements.reduce((a, b) => a.concat(b), []).includes(x)
+                    x =>
+                      !accNoEmptyElements
+                        .reduce((a, b) => a.concat(b), [])
+                        .some(e => e.txid === x.txid)
                   );
                   if (remainingTxs.length > 0) {
                     const remainingGenesis = remainingTxs.find(
@@ -704,24 +691,12 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                     }
                   }
                   if (accNoEmptyElements.length > 1) {
-                    const mockedBurnAll = txid => [
-                      {
-                        txid,
-                        detail: { transactionType: "BURN_ALL" },
-                        vin: null,
-                        vout: null,
-                        balance: null,
-                        confirmations: null,
-                        date: null,
-                        time: null
-                      }
-                    ];
                     const newLength = accNoEmptyElements.length * 2 - 1;
 
                     const accWithMockedBurnAll = Array.from({ length: newLength }).map((e, i) =>
                       i % 2 === 0
                         ? accNoEmptyElements[i / 2]
-                        : mockedBurnAll(`${concatDetailsIndex}-${i}-burn-all`)
+                        : mockedArrayBurnAll(`${concatDetailsIndex}-${i}-burn-all`)
                     );
                     return accWithMockedBurnAll.reduce((a, b) => a.concat(b), []);
                   } else {
@@ -746,6 +721,7 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                   el.detail.transactionType !== "BURN_BATON" &&
                   el.detail.transactionType !== "BURN_ALL")
             );
+
             if (nextSentTxIndex !== -1) {
               const lastUtxos = transactions.lastUnconfirmedSentTx
                 ? transactions.lastUnconfirmedSentTx.vin
@@ -764,39 +740,35 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                         item.vout > 0
                     ).length > 0
                 );
+
               if (
                 txIdInVin.length ===
-                array
-                  .slice(0, nextSentTxIndex + 1)
-                  .filter(
-                    el =>
-                      el.detail.transactionType !== "BURN_ALL" &&
-                      el.detail.transactionType !== "BURN_BATON"
-                  ).length
+                  array
+                    .slice(0, nextSentTxIndex + 1)
+                    .filter(
+                      el =>
+                        el.detail.transactionType !== "BURN_ALL" &&
+                        el.detail.transactionType !== "BURN_BATON"
+                    ).length &&
+                nextSentTxIndex !== 0
               ) {
                 return { result: array, lastIndex: nextSentTxIndex };
-              } else {
-                const insert = (arr, index, newItem) => [
-                  ...arr.slice(0, index),
-                  newItem,
-                  ...arr.slice(index)
-                ];
-
-                const mockedBurnAll = txid => ({
-                  txid,
-                  detail: { transactionType: "BURN_ALL" },
-                  vin: null,
-                  vout: null,
-                  balance: null,
-                  confirmations: null,
-                  date: null,
-                  time: null
-                });
+              } else if (
+                txIdInVin.length !==
+                  array
+                    .slice(0, nextSentTxIndex + 1)
+                    .filter(
+                      el =>
+                        el.detail.transactionType !== "BURN_ALL" &&
+                        el.detail.transactionType !== "BURN_BATON"
+                    ).length &&
+                nextSentTxIndex !== 0
+              ) {
                 const burnAllIndexes = array
                   .slice(0, nextSentTxIndex + 1)
                   .reduce((acc, cur, index) => {
                     if (
-                      !txIdInVin.includes(cur) &&
+                      !txIdInVin.some(e => e.txid === cur.txid) &&
                       cur.detail.transactionType !== "BURN_ALL" &&
                       cur.detail.transactionType !== "BURN_BATON"
                     ) {
@@ -808,7 +780,198 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                 const slicedArrayWithBurnAllItems = burnAllIndexes.reduce((acc, cur, index) => {
                   return insert(acc, cur + index, mockedBurnAll(`${cur + index}-burn-all`));
                 }, array);
+
                 return { result: slicedArrayWithBurnAllItems, lastIndex: nextSentTxIndex };
+              } else if (nextSentTxIndex === 0) {
+                const secondNextSentTx = array
+                  .slice(1, array.length)
+                  .find(
+                    el =>
+                      (el.balance > 0 && el.detail.transactionType === "BURN") ||
+                      (el.balance <= 0 &&
+                        el.detail.transactionType !== "BURN_BATON" &&
+                        el.detail.transactionType !== "BURN_ALL")
+                  );
+
+                const secondNextSentTxIndex = array
+                  .slice(1, array.length)
+                  .findIndex(
+                    el =>
+                      (el.balance > 0 && el.detail.transactionType === "BURN") ||
+                      (el.balance <= 0 &&
+                        el.detail.transactionType !== "BURN_BATON" &&
+                        el.detail.transactionType !== "BURN_ALL")
+                  );
+
+                const isBurAllLastTx =
+                  txIdInVin.length !==
+                  array
+                    .slice(0, nextSentTxIndex + 1)
+                    .filter(
+                      el =>
+                        el.detail.transactionType !== "BURN_ALL" &&
+                        el.detail.transactionType !== "BURN_BATON"
+                    ).length;
+
+                if (
+                  !isBurAllLastTx &&
+                  secondNextSentTxIndex !== -1 &&
+                  secondNextSentTx.time === array[0].time
+                ) {
+                  return { result: array, lastIndex: secondNextSentTxIndex + 1 };
+                } else if (
+                  isBurAllLastTx &&
+                  secondNextSentTxIndex !== -1 &&
+                  secondNextSentTx.time === array[0].time
+                ) {
+                  const burnAllIndexes = array
+                    .slice(0, nextSentTxIndex + 1)
+                    .reduce((acc, cur, index) => {
+                      if (
+                        !txIdInVin.some(e => e.txid === cur.txid) &&
+                        cur.detail.transactionType !== "BURN_ALL" &&
+                        cur.detail.transactionType !== "BURN_BATON"
+                      ) {
+                        acc.push(index);
+                      }
+                      return acc;
+                    }, []);
+
+                  const slicedArrayWithBurnAllItems = burnAllIndexes.reduce((acc, cur, index) => {
+                    return insert(acc, cur + index, mockedBurnAll(`${cur + index}-burn-all`));
+                  }, array);
+
+                  return {
+                    result: slicedArrayWithBurnAllItems,
+                    lastIndex: secondNextSentTxIndex + 1
+                  };
+                } else if (secondNextSentTxIndex === -1) {
+                  const txIdInFirstSentVin = array
+                    .slice(1, array.length)
+                    .filter(
+                      el =>
+                        el.detail.transactionType !== "BURN_ALL" &&
+                        el.detail.transactionType !== "BURN_BATON" &&
+                        array[0].vin.filter(
+                          item =>
+                            item.txid === el.txid &&
+                            item.vout <= el.detail.outputs.length &&
+                            item.vout > 0
+                        ).length > 0
+                    );
+
+                  if (
+                    txIdInFirstSentVin.length ===
+                    array
+                      .slice(1, array.length)
+                      .filter(
+                        el =>
+                          el.detail.transactionType !== "BURN_ALL" &&
+                          el.detail.transactionType !== "BURN_BATON"
+                      ).length
+                  ) {
+                    return array.length > 1
+                      ? {
+                          result: isBurAllLastTx
+                            ? insert(array, 0, mockedBurnAll(`0-burn-all`))
+                            : array,
+                          lastIndex: array.length - 1
+                        }
+                      : array;
+                  } else {
+                    const burnAllIndexes = array
+                      .slice(1, array.length)
+                      .reduce((acc, cur, index) => {
+                        if (
+                          !txIdInFirstSentVin.some(e => e.txid === cur.txid) &&
+                          cur.detail.transactionType !== "BURN_ALL" &&
+                          cur.detail.transactionType !== "BURN_BATON"
+                        ) {
+                          acc.push(index + 1);
+                        }
+                        return acc;
+                      }, []);
+
+                    const slicedArrayWithBurnAllItems = burnAllIndexes.reduce((acc, cur, index) => {
+                      return insert(acc, cur + index, mockedBurnAll(`${cur + index}-burn-all`));
+                    }, array);
+                    return {
+                      result: isBurAllLastTx
+                        ? insert(slicedArrayWithBurnAllItems, 0, mockedBurnAll(`0-burn-all`))
+                        : slicedArrayWithBurnAllItems,
+                      lastIndex: array.length - 1
+                    };
+                  }
+                } else if (
+                  secondNextSentTxIndex !== -1 &&
+                  secondNextSentTx.time !== array[0].time
+                ) {
+                  const txIdInFirstSentVin = array
+                    .slice(1, secondNextSentTxIndex + 1)
+                    .filter(
+                      el =>
+                        el.detail.transactionType !== "BURN_ALL" &&
+                        el.detail.transactionType !== "BURN_BATON" &&
+                        array[0].vin.filter(
+                          item =>
+                            item.txid === el.txid &&
+                            item.vout <= el.detail.outputs.length &&
+                            item.vout > 0
+                        ).length > 0
+                    );
+
+                  if (
+                    txIdInFirstSentVin.length ===
+                    array
+                      .slice(1, secondNextSentTxIndex + 1)
+                      .filter(
+                        el =>
+                          el.detail.transactionType !== "BURN_ALL" &&
+                          el.detail.transactionType !== "BURN_BATON"
+                      ).length
+                  ) {
+                    return {
+                      result: isBurAllLastTx
+                        ? insert(array, 0, mockedBurnAll(`0-burn-all`))
+                        : array,
+                      lastIndex: secondNextSentTxIndex + 1
+                    };
+                  } else {
+                    const burnAllIndexes = array
+                      .slice(1, secondNextSentTxIndex + 1)
+                      .reduce((acc, cur, itemIndex) => {
+                        if (
+                          !txIdInFirstSentVin.some(e => e.txid === cur.txid) &&
+                          cur.detail.transactionType !== "BURN_ALL" &&
+                          cur.detail.transactionType !== "BURN_BATON"
+                        ) {
+                          acc.push(itemIndex + 1);
+                        }
+                        return acc;
+                      }, []);
+
+                    const slicedArrayWithBurnAllItems = burnAllIndexes.reduce(
+                      (accItem, curItem, itemIndex) => {
+                        return insert(
+                          accItem,
+                          curItem + itemIndex,
+                          mockedBurnAll(`${curItem + itemIndex}-burn-all`)
+                        );
+                      },
+                      array
+                    );
+                    return {
+                      result: isBurAllLastTx
+                        ? insert(slicedArrayWithBurnAllItems, 0, mockedBurnAll(`0-burn-all`))
+                        : slicedArrayWithBurnAllItems,
+                      lastIndex: secondNextSentTxIndex + 1
+                    };
+                  }
+                } else {
+                  return { result: array, lastIndex: array.length - 1 };
+                }
+              } else {
+                return { result: array, lastIndex: array.length - 1 };
               }
             } else {
               const lastUtxos = transactions.lastUnconfirmedSentTx
@@ -841,20 +1004,9 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
               ) {
                 return array.length > 1 ? { result: array, lastIndex: array.length - 1 } : array;
               } else {
-                const mockedBurnAll = txid => ({
-                  txid,
-                  detail: { transactionType: "BURN_ALL" },
-                  vin: null,
-                  vout: null,
-                  balance: null,
-                  confirmations: null,
-                  date: null,
-                  time: null
-                });
-
                 const burnAllIndexes = array.slice(0, array.length).reduce((acc, cur, index) => {
                   if (
-                    !txIdInVin.includes(cur) &&
+                    !txIdInVin.some(e => e.txid === cur.txid) &&
                     cur.detail.transactionType !== "BURN_ALL" &&
                     cur.detail.transactionType !== "BURN_BATON"
                   ) {
@@ -862,12 +1014,6 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                   }
                   return acc;
                 }, []);
-
-                const insert = (arr, index, newItem) => [
-                  ...arr.slice(0, index),
-                  newItem,
-                  ...arr.slice(index)
-                ];
 
                 const slicedArrayWithBurnAllItems = burnAllIndexes.reduce((acc, cur, index) => {
                   return insert(acc, cur + index, mockedBurnAll(`${cur + index}-burn-all`));
@@ -903,7 +1049,7 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
 
               if (nextSentTxIndex !== -1 && nextSentTx.time !== array[acc.lastIndex].time) {
                 const txIdInVin = array
-                  .slice(index + 1, nextSentTxIndex + 1)
+                  .slice(index + 1, nextSentTxIndex + index + 2)
                   .filter(
                     el =>
                       el.detail.transactionType !== "BURN_ALL" &&
@@ -919,36 +1065,24 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                 if (
                   txIdInVin.length ===
                   array
-                    .slice(index + 1, nextSentTxIndex + 1)
+                    .slice(index + 1, nextSentTxIndex + index + 2)
                     .filter(
                       el =>
                         el.detail.transactionType !== "BURN_ALL" &&
                         el.detail.transactionType !== "BURN_BATON"
                     ).length
                 ) {
-                  return { result: acc.result, lastIndex: nextSentTxIndex };
+                  return { result: acc.result, lastIndex: nextSentTxIndex + index + 1 };
                 } else {
-                  const insert = (arr, index, newItem) => [
-                    ...arr.slice(0, index),
-                    newItem,
-                    ...arr.slice(index)
-                  ];
+                  const numberBurnAlls =
+                    acc.result.filter(e => e.detail.transactionType === "BURN_ALL").length -
+                    array.filter(e => e.detail.transactionType === "BURN_ALL").length;
 
-                  const mockedBurnAll = txid => ({
-                    txid,
-                    detail: { transactionType: "BURN_ALL" },
-                    vin: null,
-                    vout: null,
-                    balance: null,
-                    confirmations: null,
-                    date: null,
-                    time: null
-                  });
                   const burnAllIndexes = array
-                    .slice(index + 1, nextSentTxIndex + 1)
+                    .slice(index + 1, nextSentTxIndex + index + 2)
                     .reduce((acc, cur, itemIndex) => {
                       if (
-                        !txIdInVin.includes(cur) &&
+                        !txIdInVin.some(e => e.txid === cur.txid) &&
                         cur.detail.transactionType !== "BURN_ALL" &&
                         cur.detail.transactionType !== "BURN_BATON"
                       ) {
@@ -956,18 +1090,20 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                       }
                       return acc;
                     }, []);
-
                   const slicedArrayWithBurnAllItems = burnAllIndexes.reduce(
                     (accItem, curItem, itemIndex) => {
                       return insert(
                         accItem,
-                        curItem + itemIndex,
+                        curItem + itemIndex + numberBurnAlls,
                         mockedBurnAll(`${curItem + itemIndex}-burn-all`)
                       );
                     },
                     acc.result
                   );
-                  return { result: slicedArrayWithBurnAllItems, lastIndex: nextSentTxIndex };
+                  return {
+                    result: slicedArrayWithBurnAllItems,
+                    lastIndex: nextSentTxIndex + index + 1
+                  };
                 }
               } else {
                 const txIdInVin = array
@@ -996,26 +1132,9 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                 ) {
                   return { result: acc.result, lastIndex: array.length - 1 };
                 } else {
-                  const insert = (arr, index, newItem) => [
-                    ...arr.slice(0, index),
-                    newItem,
-                    ...arr.slice(index)
-                  ];
-
-                  const mockedBurnAll = txid => ({
-                    txid,
-                    detail: { transactionType: "BURN_ALL" },
-                    vin: null,
-                    vout: null,
-                    balance: null,
-                    confirmations: null,
-                    date: null,
-                    time: null
-                  });
-
                   const burnAllIndexes = array.slice(index + 1).reduce((acc, cur, itemIndex) => {
                     if (
-                      !txIdInVin.includes(cur) &&
+                      !txIdInVin.some(e => e.txid === cur.txid) &&
                       cur.detail.transactionType !== "BURN_ALL" &&
                       cur.detail.transactionType !== "BURN_BATON"
                     ) {
@@ -1024,11 +1143,15 @@ const getTokenTransactionHistory = async (SLP, slpAddresses, tokenInfo, tokenUtx
                     return acc;
                   }, []);
 
+                  const numberBurnAlls =
+                    acc.result.filter(e => e.detail.transactionType === "BURN_ALL").length -
+                    array.filter(e => e.detail.transactionType === "BURN_ALL").length;
+
                   const slicedArrayWithBurnAllItems = burnAllIndexes.reduce(
                     (accItem, curItem, itemIndex) => {
                       return insert(
                         accItem,
-                        curItem + itemIndex,
+                        curItem + itemIndex + numberBurnAlls,
                         mockedBurnAll(`${curItem + itemIndex}-burn-all`)
                       );
                     },
