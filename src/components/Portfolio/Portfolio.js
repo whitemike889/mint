@@ -64,7 +64,7 @@ const StyledSwitch = styled(Col)`
 
 export default () => {
   const ContextValue = React.useContext(WalletContext);
-  const { wallet, tokens, loading, balances } = ContextValue;
+  const { wallet, tokens, loading, balances, slpBalancesAndUtxos } = ContextValue;
   const [selectedToken, setSelectedToken] = useState(null);
   const [action, setAction] = useState(null);
 
@@ -84,7 +84,11 @@ export default () => {
   const getTokenHistory = async tokenInfo => {
     setLoadingTokenHistory(true);
     try {
-      const resp = await getTokenTransactionHistory(wallet.slpAddresses, tokenInfo);
+      const resp = await getTokenTransactionHistory(
+        wallet.slpAddresses,
+        tokenInfo,
+        slpBalancesAndUtxos.slpUtxos.filter(utxo => utxo.slpData.tokenId === tokenInfo.tokenId)
+      );
       setHistory(resp);
     } catch (err) {
       const message = err.message || err.error || JSON.stringify(err);
@@ -383,7 +387,14 @@ export default () => {
                             <div
                               key={`history-${el.txid}`}
                               style={{
-                                background: el.balance > 0 ? "#D4EFFC" : " #ffd59a",
+                                background:
+                                  el.balance > 0
+                                    ? el.detail.transactionType === "BURN"
+                                      ? "#FDF1F0"
+                                      : "#D4EFFC"
+                                    : el.detail.transactionType.includes("BURN")
+                                    ? "#FDF1F0"
+                                    : "#ffd59a",
                                 color: "black",
                                 borderRadius: "12px",
                                 marginBottom: "18px",
@@ -392,35 +403,60 @@ export default () => {
                                 width: "97%"
                               }}
                             >
-                              <a
-                                href={`https://explorer.bitcoin.com/bch/tx/${el.txid}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <p>
-                                  {el.balance > 0
-                                    ? el.detail.transactionType === "GENESIS"
-                                      ? "Genesis"
-                                      : el.detail.transactionType === "MINT"
-                                      ? "Mint"
-                                      : "Received"
-                                    : "Sent"}
-                                </p>
-                                <p>{el.date.toLocaleString()}</p>
-
-                                <p>{`${el.balance > 0 ? "+" : ""}${el.balance} ${
-                                  el.detail.symbol
-                                }`}</p>
-
-                                <Paragraph
-                                  small
-                                  ellipsis
-                                  style={{ whiteSpace: "nowrap", color: "black", maxWidth: "90%" }}
+                              {el.detail.transactionType !== "BURN_ALL" ? (
+                                <a
+                                  href={`https://explorer.bitcoin.com/bch/tx/${el.txid}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
                                 >
-                                  {el.txid}
-                                </Paragraph>
-                                <p>{`Confirmations: ${el.confirmations}`}</p>
-                              </a>
+                                  <p>
+                                    {el.balance > 0
+                                      ? el.detail.transactionType === "GENESIS"
+                                        ? "Genesis"
+                                        : el.detail.transactionType === "MINT"
+                                        ? "Mint"
+                                        : el.detail.transactionType === "BURN"
+                                        ? "Burn"
+                                        : "Received"
+                                      : el.detail.transactionType === "BURN_BATON"
+                                      ? "Burn Baton"
+                                      : "Sent"}
+                                  </p>
+                                  <p>{el.date.toLocaleString()}</p>
+
+                                  {el.detail.transactionType === "BURN" &&
+                                    (el.detail.burnAmount ? (
+                                      <p>{`${el.detail.burnAmount} ${el.detail.symbol} burned`}</p>
+                                    ) : (
+                                      <p>Burn amount could not be found for this transaction</p>
+                                    ))}
+
+                                  {el.detail.transactionType !== "BURN_BATON" && (
+                                    <p>{`${
+                                      el.balance > 0 && el.detail.transactionType !== "BURN"
+                                        ? "+"
+                                        : ""
+                                    }${el.balance} ${el.detail.symbol} ${
+                                      el.detail.transactionType === "BURN" ? "left" : ""
+                                    }`}</p>
+                                  )}
+
+                                  <Paragraph
+                                    small
+                                    ellipsis
+                                    style={{
+                                      whiteSpace: "nowrap",
+                                      color: "black",
+                                      maxWidth: "90%"
+                                    }}
+                                  >
+                                    {el.txid}
+                                  </Paragraph>
+                                  <p>{`Confirmations: ${el.confirmations}`}</p>
+                                </a>
+                              ) : (
+                                <p>Burn All</p>
+                              )}
                             </div>
                           ))}
                           <a
