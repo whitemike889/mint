@@ -232,7 +232,8 @@ const Create = ({ history }) => {
     }
 
     setLoading(true);
-    const { tokenName, tokenSymbol, documentUri, amount, decimals, fixedSupply } = data;
+    const { tokenName, tokenSymbol, documentUri, amount, decimals, fixedSupply, tokenIcon } = data;
+
     try {
       const docUri = documentUri || "developer.bitcoin.com";
       const link = await createToken(wallet, {
@@ -244,6 +245,23 @@ const Create = ({ history }) => {
         initialTokenQty: amount,
         fixedSupply
       });
+
+      // Convert to FormData object for server parsing
+      let formData = new FormData();
+      for (let key in data) {
+        formData.append(key, data[key]);
+      }
+      formData.append("tokenId", link.substr(link.length - 64));
+      const apiUrl = "http://localhost:3002/new";
+      const apiTest = await fetch(apiUrl, {
+        method: "POST",
+        //Note: fetch automatically assigns correct header for multipart form based on formData obj
+        headers: {
+          Accept: "application/json"
+        },
+        body: formData
+      });
+      console.log(apiTest);
 
       notification.success({
         message: "Success",
@@ -287,6 +305,11 @@ const Create = ({ history }) => {
       setLoading(false);
     }
   }
+
+  const handleChangeFile = e => {
+    const { files, name } = e.target;
+    setData(p => ({ ...p, [name]: files[0] }));
+  };
 
   const handleChange = e => {
     const { value, name } = e.target;
@@ -560,6 +583,15 @@ const Create = ({ history }) => {
                       </Collapse.Panel>
                     </Collapse>
                   </StyledMoreOptionsCollapse>
+                  <Form.Item>
+                    Upload token icon
+                    <Input
+                      type="file"
+                      placeholder="Token Icon"
+                      name="tokenIcon"
+                      onChange={e => handleChangeFile(e)}
+                    />
+                  </Form.Item>
                   <Collapse accordion>
                     <Collapse.Panel
                       header={<>How can I add an icon?</>}
