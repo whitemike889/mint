@@ -115,6 +115,9 @@ const Create = () => {
   const [hash, setHash] = React.useState("");
   const [fileList, setFileList] = React.useState();
   const [file, setFile] = React.useState();
+  const [tokenIconFileList, setTokenIconFileList] = React.useState();
+  const [imageUrl, setImageUrl] = React.useState("");
+
   const history = useHistory();
 
   const transformFile = file => {
@@ -139,6 +142,7 @@ const Create = () => {
   };
 
   const getFileSize = size => size / (1024 * 1024);
+  const getFileSizeInKb = size => size / 1024;
 
   const beforeUpload = file => {
     try {
@@ -160,6 +164,56 @@ const Create = () => {
       setFile(undefined);
       setHash("");
       return false;
+    }
+  };
+
+  const getBase64 = (img, callback) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => callback(reader.result));
+    reader.readAsDataURL(img);
+  };
+
+  const transformTokenIconFile = file => {
+    return new Promise((resolve, reject) => {
+      reject();
+      setLoading(false);
+    });
+  };
+
+  const beforeTokenIconUpload = file => {
+    try {
+      if (getFileSizeInKb(file.size) > 100) {
+        throw new Error("File must be smaller than 100KB!");
+      } else if (file.type !== "image/png") {
+        throw new Error("You can only upload PNG file!");
+      } else {
+        setData(prev => ({ ...prev, tokenIcon: file }));
+        setLoading(true);
+        console.log("file :", file);
+        getBase64(file, imageUrl => setImageUrl(imageUrl));
+      }
+    } catch (e) {
+      console.error("error", e);
+      notification.error({
+        message: "Error",
+        description: e.message || e.error || JSON.stringify(e),
+        duration: 0
+      });
+      setTokenIconFileList(undefined);
+      setData(prev => ({ ...prev, tokenIcon: undefined }));
+      setImageUrl("");
+      return false;
+    }
+  };
+
+  const handleChangeTokenIconUpload = info => {
+    let list = [...info.fileList];
+
+    if (getFileSizeInKb(info.file.size) > 100 || info.file.type !== "image/png") {
+      setTokenIconFileList(undefined);
+      setImageUrl("");
+    } else {
+      setTokenIconFileList(list.slice(-1));
     }
   };
 
@@ -494,8 +548,83 @@ const Create = () => {
                     </Tooltip>
                   </Form.Item>
 
+                  <Collapse style={{ marginBottom: "24px" }} accordion>
+                    <Collapse.Panel
+                      header={<>Add token icon</>}
+                      key="1"
+                      style={{ textAlign: "left" }}
+                    >
+                      <Form.Item>
+                        <Dragger
+                          multiple={false}
+                          transformFile={transformTokenIconFile}
+                          beforeUpload={beforeTokenIconUpload}
+                          onChange={handleChangeTokenIconUpload}
+                          onRemove={() => false}
+                          fileList={tokenIconFileList}
+                          name="tokenIcon"
+                          style={{
+                            background: "#D3D3D3",
+                            borderRadius: "8px"
+                          }}
+                        >
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt="avatar"
+                              style={{ maxHeight: "128px", maxWidth: "100%" }}
+                            />
+                          ) : (
+                            <>
+                              {" "}
+                              <Icon style={{ fontSize: "24px" }} type="upload" />
+                              <p>Click, or drag file to this area to upload</p>
+                              <p style={{ fontSize: "12px" }}>Must be a png file and under 100kb</p>
+                            </>
+                          )}
+                        </Dragger>
+
+                        {!loading && data.tokenIcon && (
+                          <>
+                            <Tooltip title={data.tokenIcon.name}>
+                              <Paragraph
+                                small
+                                ellipsis
+                                style={{ lineHeight: "normal", textAlign: "center" }}
+                              >
+                                <Icon type="paper-clip" />
+                                {data.tokenIcon.name}
+                              </Paragraph>
+                            </Tooltip>{" "}
+                          </>
+                        )}
+                        {/* Upload token icon
+                        <Input
+                          type="file"
+                          placeholder="Token Icon"
+                          name="tokenIcon"
+                          onChange={e => handleChangeFile(e)}
+                        /> */}
+                      </Form.Item>
+
+                      <Paragraph>
+                        You can also follow{" "}
+                        <strong>
+                          <a
+                            href="https://github.com/kosinusbch/slp-token-icons#adding-your-icon"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            these instructions
+                          </a>
+                        </strong>{" "}
+                        after creating your token.
+                      </Paragraph>
+                    </Collapse.Panel>
+                  </Collapse>
+
                   <StyledMoreOptionsCollapse>
-                    <Collapse style={{ marginBottom: "24px" }} bordered={false}>
+                    <Collapse style={{ marginBottom: "12px" }} bordered={false}>
                       <Collapse.Panel
                         header={<> More options...</>}
                         key="0"
@@ -600,36 +729,7 @@ const Create = () => {
                       </Collapse.Panel>
                     </Collapse>
                   </StyledMoreOptionsCollapse>
-                  <Form.Item>
-                    Upload token icon
-                    <Input
-                      type="file"
-                      placeholder="Token Icon"
-                      name="tokenIcon"
-                      onChange={e => handleChangeFile(e)}
-                    />
-                  </Form.Item>
-                  <Collapse accordion>
-                    <Collapse.Panel
-                      header={<>How can I add an icon?</>}
-                      key="1"
-                      style={{ textAlign: "left" }}
-                    >
-                      <Paragraph>
-                        After creating your token, follow{" "}
-                        <strong>
-                          <a
-                            href="https://github.com/kosinusbch/slp-token-icons#adding-your-icon"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            these instructions
-                          </a>
-                        </strong>{" "}
-                        to add your own token icon.
-                      </Paragraph>
-                    </Collapse.Panel>
-                  </Collapse>
+
                   <div style={{ paddingTop: "12px" }}>
                     <Button onClick={() => handleCreateToken()}>Create Token</Button>
                   </div>
