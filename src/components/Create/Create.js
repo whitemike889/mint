@@ -254,6 +254,7 @@ const Create = () => {
       }
       formData.append("tokenId", link.substr(link.length - 64));
       const apiUrl = "https://mint-icons.btctest.net/new";
+      //const apiUrl = "http://localhost:3002/new";
       try {
         const apiTest = await fetch(apiUrl, {
           method: "POST",
@@ -263,7 +264,12 @@ const Create = () => {
           },
           body: formData
         });
-        console.log(apiTest);
+        const apiTestJson = await apiTest.json();
+        console.log(apiTestJson);
+        // Example response for successful request
+        /*{"status": "ok", "approvalRequested": true} */
+        // Example response for failed request
+        /*{"status": "error", "approvalRequested": false} */
       } catch (err) {
         console.log(`Error in uploading token icon:`);
         console.log(err);
