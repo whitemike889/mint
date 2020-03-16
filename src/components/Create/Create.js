@@ -233,7 +233,8 @@ const Create = () => {
     }
 
     setLoading(true);
-    const { tokenName, tokenSymbol, documentUri, amount, decimals, fixedSupply } = data;
+    const { tokenName, tokenSymbol, documentUri, amount, decimals, fixedSupply, tokenIcon } = data;
+
     try {
       const docUri = documentUri || "developer.bitcoin.com";
       const link = await createToken(wallet, {
@@ -245,6 +246,32 @@ const Create = () => {
         initialTokenQty: amount,
         fixedSupply
       });
+
+      // Convert to FormData object for server parsing
+      let formData = new FormData();
+      for (let key in data) {
+        formData.append(key, data[key]);
+      }
+      formData.append("tokenId", link.substr(link.length - 64));
+      const apiUrl = "https://mint-icons.btctest.net/new";
+      try {
+        const apiTest = await fetch(apiUrl, {
+          method: "POST",
+          //Note: fetch automatically assigns correct header for multipart form based on formData obj
+          headers: {
+            Accept: "application/json"
+          },
+          body: formData
+        });
+        console.log(apiTest);
+      } catch (err) {
+        console.log(`Error in uploading token icon:`);
+        console.log(err);
+        // TODO Show a popup, "Error in uploading icon. Create token anyway?"
+        // Buttons: Yes, No
+        // If user clicks Yes, create the token with no icon
+        // If user clicks No, exit the function and go back to the form
+      }
 
       notification.success({
         message: "Success",
@@ -266,6 +293,9 @@ const Create = () => {
           case "Document hash must be provided as a 64 character hex string":
             message = e.message;
             break;
+          case "Transaction input BCH amount is too low.  Add more BCH inputs to fund this transaction.":
+            message = "Not enough BCH. Deposit some funds to use this feature.";
+            break;
           default:
             message = "Transaction Failed. Try again later";
             break;
@@ -286,6 +316,11 @@ const Create = () => {
       setLoading(false);
     }
   }
+
+  const handleChangeFile = e => {
+    const { files, name } = e.target;
+    setData(p => ({ ...p, [name]: files[0] }));
+  };
 
   const handleChange = e => {
     const { value, name } = e.target;
@@ -559,6 +594,15 @@ const Create = () => {
                       </Collapse.Panel>
                     </Collapse>
                   </StyledMoreOptionsCollapse>
+                  <Form.Item>
+                    Upload token icon
+                    <Input
+                      type="file"
+                      placeholder="Token Icon"
+                      name="tokenIcon"
+                      onChange={e => handleChangeFile(e)}
+                    />
+                  </Form.Item>
                   <Collapse accordion>
                     <Collapse.Panel
                       header={<>How can I add an icon?</>}
