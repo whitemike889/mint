@@ -252,16 +252,25 @@ const Create = ({ history }) => {
         formData.append(key, data[key]);
       }
       formData.append("tokenId", link.substr(link.length - 64));
-      const apiUrl = "http://localhost:3002/new";
-      const apiTest = await fetch(apiUrl, {
-        method: "POST",
-        //Note: fetch automatically assigns correct header for multipart form based on formData obj
-        headers: {
-          Accept: "application/json"
-        },
-        body: formData
-      });
-      console.log(apiTest);
+      const apiUrl = "https://mint-icons.btctest.net/new";
+      try {
+        const apiTest = await fetch(apiUrl, {
+          method: "POST",
+          //Note: fetch automatically assigns correct header for multipart form based on formData obj
+          headers: {
+            Accept: "application/json"
+          },
+          body: formData
+        });
+        console.log(apiTest);
+      } catch (err) {
+        console.log(`Error in uploading token icon:`);
+        console.log(err);
+        // TODO Show a popup, "Error in uploading icon. Create token anyway?"
+        // Buttons: Yes, No
+        // If user clicks Yes, create the token with no icon
+        // If user clicks No, exit the function and go back to the form
+      }
 
       notification.success({
         message: "Success",
