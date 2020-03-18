@@ -30,6 +30,7 @@ import getTokenTransactionHistory from "../../utils/getTokenTransactionHistory";
 import bchFlagLogo from "../../assets/4-bitcoin-cash-logo-flag.png";
 
 export const SLP_TOKEN_ICONS_URL = "https://tokens.bch.sx/64";
+export const BITCOIN_DOT_COM_ICONS_URL = "https://icons.btctest.net/64";
 
 export const StyledCollapse = styled(Collapse)`
   background: #fbfcfd !important;
@@ -73,6 +74,28 @@ export default () => {
   const [history, setHistory] = useState(null);
   const [outerAction, setOuterAction] = useState(false);
   const [showArchivedTokens, setShowArchivedTokens] = useState(false);
+
+  const getImgs = doc => {
+    return Array.from(doc.images)
+      .filter(
+        img => img.currentSrc.includes("tokens.bch.sx") || img.currentSrc.includes("https://icons.")
+      )
+      .map(
+        img =>
+          img.currentSrc
+            .split("/")
+            .slice()
+            .reverse()[0]
+            .split(".")[0]
+      );
+  };
+
+  React.useEffect(() => {
+    const tokenIconIds = getImgs(document);
+    if (tokenIconIds.length) {
+      tokenIconIds.map(id => window.localStorage.removeItem(id));
+    }
+  }, [tokens]);
 
   const isModalOpen = (action, selectedToken) => action === "sendBCH" || selectedToken !== null;
 
@@ -485,14 +508,24 @@ export default () => {
                             <Img
                               heigh={16}
                               width={16}
-                              src={`${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`}
+                              src={[
+                                `${BITCOIN_DOT_COM_ICONS_URL}/${token.tokenId}.png`,
+                                `${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`
+                              ]}
                               unloader={
                                 <img
                                   alt=""
                                   heigh={16}
                                   width={16}
-                                  style={{ borderRadius: "50%" }}
-                                  src={makeBlockie(token.tokenId)}
+                                  style={{
+                                    borderRadius: window.localStorage.getItem(token.tokenId)
+                                      ? null
+                                      : "50%"
+                                  }}
+                                  src={
+                                    window.localStorage.getItem(token.tokenId) ||
+                                    makeBlockie(token.tokenId)
+                                  }
                                 />
                               }
                             />
@@ -506,15 +539,25 @@ export default () => {
                   <Meta
                     avatar={
                       <Img
-                        src={`${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`}
+                        src={[
+                          `${BITCOIN_DOT_COM_ICONS_URL}/${token.tokenId}.png`,
+                          `${SLP_TOKEN_ICONS_URL}/${token.tokenId}.png`
+                        ]}
                         unloader={
                           <img
                             alt={`identicon of tokenId ${token.tokenId} `}
                             heigh="60"
                             width="60"
-                            style={{ borderRadius: "50%" }}
+                            style={{
+                              borderRadius: window.localStorage.getItem(token.tokenId)
+                                ? null
+                                : "50%"
+                            }}
                             key={`identicon-${token.tokenId}`}
-                            src={makeBlockie(token.tokenId)}
+                            src={
+                              window.localStorage.getItem(token.tokenId) ||
+                              makeBlockie(token.tokenId)
+                            }
                           />
                         }
                       />

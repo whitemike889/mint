@@ -15,7 +15,8 @@ import {
   Upload,
   Tooltip,
   Alert,
-  Checkbox
+  Checkbox,
+  Popconfirm
 } from "antd";
 import styled from "styled-components";
 import Paragraph from "antd/lib/typography/Paragraph";
@@ -117,6 +118,7 @@ const Create = () => {
   const [file, setFile] = React.useState();
   const [tokenIconFileList, setTokenIconFileList] = React.useState();
   const [imageUrl, setImageUrl] = React.useState("");
+  const [showConfirm, setShowConfirm] = React.useState(false);
 
   const history = useHistory();
 
@@ -142,7 +144,6 @@ const Create = () => {
   };
 
   const getFileSize = size => size / (1024 * 1024);
-  const getFileSizeInKb = size => size / 1024;
 
   const beforeUpload = file => {
     try {
@@ -167,30 +168,80 @@ const Create = () => {
     }
   };
 
-  const getBase64 = (img, callback) => {
-    const reader = new FileReader();
-    reader.addEventListener("load", () => callback(reader.result));
-    reader.readAsDataURL(img);
-  };
+  const handleTokenIconImage = (imgFile, callback) =>
+    new Promise((resolve, reject) => {
+      setLoading(true);
+      try {
+        const reader = new FileReader();
+
+        const width = 128;
+        const height = 128;
+        reader.readAsDataURL(imgFile);
+
+        reader.onload = event => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const elem = document.createElement("canvas");
+            elem.width = width;
+            elem.height = height;
+            const ctx = elem.getContext("2d");
+            // img.width and img.height will contain the original dimensions
+            ctx.drawImage(img, 0, 0, width, height);
+            if (!HTMLCanvasElement.prototype.toBlob) {
+              Object.defineProperty(HTMLCanvasElement.prototype, "toBlob", {
+                value: function(callback, type, quality) {
+                  var dataURL = this.toDataURL(type, quality).split(",")[1];
+                  setTimeout(function() {
+                    var binStr = atob(dataURL),
+                      len = binStr.length,
+                      arr = new Uint8Array(len);
+                    for (var i = 0; i < len; i++) {
+                      arr[i] = binStr.charCodeAt(i);
+                    }
+                    callback(new Blob([arr], { type: type || "image/png" }));
+                  });
+                }
+              });
+            }
+
+            ctx.canvas.toBlob(
+              blob => {
+                const file = new File([blob], imgFile.name, {
+                  type: "image/png"
+                });
+                const resultReader = new FileReader();
+
+                resultReader.readAsDataURL(file);
+                setData(prev => ({ ...prev, tokenIcon: file }));
+                resultReader.addEventListener("load", () => callback(resultReader.result));
+                setLoading(false);
+                resolve();
+              },
+              "image/png",
+              1
+            );
+          };
+        };
+      } catch (err) {
+        reject(err);
+      }
+    });
 
   const transformTokenIconFile = file => {
     return new Promise((resolve, reject) => {
       reject();
-      setLoading(false);
+      // setLoading(false);
     });
   };
 
   const beforeTokenIconUpload = file => {
     try {
-      if (getFileSizeInKb(file.size) > 100) {
-        throw new Error("File must be smaller than 100KB!");
-      } else if (file.type !== "image/png") {
-        throw new Error("You can only upload PNG file!");
+      if (file.type.split("/")[0] !== "image") {
+        throw new Error("You can only upload image files!");
       } else {
-        setData(prev => ({ ...prev, tokenIcon: file }));
         setLoading(true);
-        console.log("file :", file);
-        getBase64(file, imageUrl => setImageUrl(imageUrl));
+        handleTokenIconImage(file, imageUrl => setImageUrl(imageUrl));
       }
     } catch (e) {
       console.error("error", e);
@@ -209,7 +260,7 @@ const Create = () => {
   const handleChangeTokenIconUpload = info => {
     let list = [...info.fileList];
 
-    if (getFileSizeInKb(info.file.size) > 100 || info.file.type !== "image/png") {
+    if (info.file.type.split("/")[0] !== "image") {
       setTokenIconFileList(undefined);
       setImageUrl("");
     } else {
@@ -267,27 +318,28 @@ const Create = () => {
     }
   };
 
+  const isInvalidForm = data =>
+    !data.tokenName ||
+    !data.tokenSymbol ||
+    !data.amount ||
+    Number(data.amount) <= 0 ||
+    (data.decimals !== "" && data.decimals < 0) ||
+    (data.decimals !== "" && data.decimals > 9) ||
+    (data.decimals !== "" && data.decimals % 1 !== 0) ||
+    data.decimals === "";
+
   async function handleCreateToken() {
     setData({
       ...data,
       dirty: false
     });
 
-    if (
-      !data.tokenName ||
-      !data.tokenSymbol ||
-      !data.amount ||
-      Number(data.amount) <= 0 ||
-      (data.decimals !== "" && data.decimals < 0) ||
-      (data.decimals !== "" && data.decimals > 9) ||
-      (data.decimals !== "" && data.decimals % 1 !== 0) ||
-      data.decimals === ""
-    ) {
+    if (isInvalidForm(data)) {
       return;
     }
 
     setLoading(true);
-    const { tokenName, tokenSymbol, documentUri, amount, decimals, fixedSupply, tokenIcon } = data;
+    const { tokenName, tokenSymbol, documentUri, amount, decimals, fixedSupply } = data;
 
     try {
       const docUri = documentUri || "developer.bitcoin.com";
@@ -301,47 +353,71 @@ const Create = () => {
         fixedSupply
       });
 
-      // Convert to FormData object for server parsing
-      let formData = new FormData();
-      for (let key in data) {
-        formData.append(key, data[key]);
-      }
-      formData.append("tokenId", link.substr(link.length - 64));
-      const apiUrl = "https://mint-icons.btctest.net/new";
-      //const apiUrl = "http://localhost:3002/new";
-      try {
-        const apiTest = await fetch(apiUrl, {
-          method: "POST",
-          //Note: fetch automatically assigns correct header for multipart form based on formData obj
-          headers: {
-            Accept: "application/json"
-          },
-          body: formData
-        });
-        const apiTestJson = await apiTest.json();
-        console.log(apiTestJson);
-        // Example response for successful request
-        /*{"status": "ok", "approvalRequested": true} */
-        // Example response for failed request
-        /*{"status": "error", "approvalRequested": false} */
-      } catch (err) {
-        console.log(`Error in uploading token icon:`);
-        console.log(err);
-        // TODO Show a popup, "Error in uploading icon. Create token anyway?"
-        // Buttons: Yes, No
-        // If user clicks Yes, create the token with no icon
-        // If user clicks No, exit the function and go back to the form
-      }
+      if (data.tokenIcon) {
+        // Convert to FormData object for server parsing
+        let formData = new FormData();
+        for (let key in data) {
+          formData.append(key, data[key]);
+        }
+        formData.append("tokenId", link.substr(link.length - 64));
+        const apiUrl = "https://mint-icons.btctest.net/new";
+        //const apiUrl = "http://localhost:3002/new";
+        try {
+          const apiTest = await fetch(apiUrl, {
+            method: "POST",
+            //Note: fetch automatically assigns correct header for multipart form based on formData obj
+            headers: {
+              Accept: "application/json"
+            },
+            body: formData
+          });
+          const apiTestJson = await apiTest.json();
 
+          if (!apiTestJson.approvalRequested) {
+            throw new Error("Error in uploading token icon");
+          } else {
+            window.localStorage.setItem(`${link.substr(link.length - 64)}`, imageUrl);
+          }
+
+          // console.log(apiTestJson);
+          // Example response for successful request
+          /*{"status": "ok", "approvalRequested": true} */
+          // Example response for failed request
+          /*{"status": "error", "approvalRequested": false} */
+        } catch (err) {
+          console.error(err.message);
+
+          notification.error({
+            message: "Error",
+            description: (
+              <a
+                href={"https://github.com/kosinusbch/slp-token-icons#adding-your-icon"}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Paragraph>{`Error in uploading token icon, you still can click here and follow the instructions.`}</Paragraph>
+              </a>
+            ),
+            duration: 0
+          });
+          // TODO Show a popup, "Error in uploading icon. Create token anyway?"
+          // Buttons: Yes, No
+          // If user clicks Yes, create the token with no icon
+          // If user clicks No, exit the function and go back to the form
+        }
+      }
       notification.success({
         message: "Success",
         description: (
           <a href={link} target="_blank" rel="noopener noreferrer">
-            <Paragraph>Transaction successful. Click or tap here for more details</Paragraph>
+            <Paragraph>
+              Create token transaction successful. Click or tap here for more details
+            </Paragraph>
           </a>
         ),
         duration: 2
       });
+
       history.push("/portfolio");
     } catch (e) {
       let message;
@@ -376,11 +452,6 @@ const Create = () => {
       setLoading(false);
     }
   }
-
-  const handleChangeFile = e => {
-    const { files, name } = e.target;
-    setData(p => ({ ...p, [name]: files[0] }));
-  };
 
   const handleChange = e => {
     const { value, name } = e.target;
@@ -572,14 +643,14 @@ const Create = () => {
                             <img
                               src={imageUrl}
                               alt="avatar"
-                              style={{ maxHeight: "128px", maxWidth: "100%" }}
+                              // style={{ maxHeight: "128px", maxWidth: "100%" }}
                             />
                           ) : (
                             <>
                               {" "}
                               <Icon style={{ fontSize: "24px" }} type="upload" />
                               <p>Click, or drag file to this area to upload</p>
-                              <p style={{ fontSize: "12px" }}>Must be a png file and under 100kb</p>
+                              <p style={{ fontSize: "12px" }}>Must be an image</p>
                             </>
                           )}
                         </Dragger>
@@ -731,7 +802,25 @@ const Create = () => {
                   </StyledMoreOptionsCollapse>
 
                   <div style={{ paddingTop: "12px" }}>
-                    <Button onClick={() => handleCreateToken()}>Create Token</Button>
+                    <Popconfirm
+                      visible={!data.tokenIcon && !isInvalidForm(data) && showConfirm}
+                      title="Are you sure you want to create a token without an icon？"
+                      onConfirm={() => handleCreateToken()}
+                      onCancel={() => setShowConfirm(false)}
+                      okText="Yes"
+                      cancelText="No"
+                      placement="top"
+                    >
+                      <Button
+                        onClick={
+                          data.tokenIcon || isInvalidForm(data)
+                            ? () => handleCreateToken()
+                            : () => setShowConfirm(true)
+                        }
+                      >
+                        Create Token
+                      </Button>
+                    </Popconfirm>
                   </div>
                 </Form>
               </Card>
