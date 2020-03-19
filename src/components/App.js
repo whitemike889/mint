@@ -82,6 +82,8 @@ const App = () => {
   const [collapsed, setCollapsed] = React.useState(window.innerWidth < 768);
   const [mobile, setMobile] = React.useState(false);
   const [address, setAddress] = React.useState("slpAddress");
+  const [pixelRatio, setPixelRatio] = React.useState(1);
+
   const ContextValue = React.useContext(WalletContext);
   const { wallet } = ContextValue;
   const radio = React.useRef(null);
@@ -103,18 +105,23 @@ const App = () => {
     setAddress(address === "cashAddress" ? "slpAddress" : "cashAddress");
   };
 
-  const handleResize = () => setMobile(window.innerWidth < 768);
+  const handleResize = () => {
+    setMobile(window.innerWidth < 768);
+    setPixelRatio(window.devicePixelRatio);
+  };
 
   const handleClickTrigger = e => (document.body.style.overflow = "hidden");
 
   React.useEffect(() => {
-    if (mobile) {
+    if (mobile && pixelRatio === 1) {
       const triggerElement = document.getElementsByTagName("aside")[0].children[1];
 
       triggerElement.addEventListener("click", handleClickTrigger);
 
       return () => triggerElement.removeEventListener("click", handleClickTrigger);
     }
+
+    // eslint-disable-next-line
   }, [mobile]);
 
   React.useEffect(() => {
@@ -269,6 +276,7 @@ const App = () => {
                     <div>
                       <QRCode
                         id="borderedQRCode"
+                        pixelRatio={pixelRatio}
                         address={
                           address === "slpAddress"
                             ? wallet.Path245.slpAddress
