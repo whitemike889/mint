@@ -126,7 +126,7 @@ export const QRCode = ({ address, size = 210, onClick = () => null, ...otherProp
             disabled={!visible}
             autoComplete="off"
             type="text"
-            spellcheck="false"
+            spellCheck="false"
             addonAfter={<Button ghost type="link" icon={visible ? "check" : "copy"} />}
           />
         </StyledInput>
