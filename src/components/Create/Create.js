@@ -16,16 +16,30 @@ import {
   Tooltip,
   Alert,
   Checkbox,
-  Popconfirm
+  Popconfirm,
+  Slider,
+  Switch
 } from "antd";
 import styled from "styled-components";
+import Cropper from "react-easy-crop";
 import Paragraph from "antd/lib/typography/Paragraph";
 import createToken from "../../utils/broadcastTransaction";
 import StyledCreate from "../Common/StyledPage";
+import { EnhancedModal } from "../Portfolio/EnhancedModal";
 import { QRCode } from "../Common/QRCode";
+import getCroppedImg from "../../utils/cropImage";
+import getRoundImg from "../../utils/roundImage";
+import getResizedImage from "../../utils/resizeImage";
+
 import * as CryptoJS from "crypto-js";
 
 const { Dragger } = Upload;
+
+const StyledSwitch = styled.div`
+  .ant-switch-checked {
+    background-color: #f34745 !important;
+  }
+`;
 
 const StyledCard = styled.div`
   .ant-card-body {
@@ -116,9 +130,54 @@ const Create = () => {
   const [hash, setHash] = React.useState("");
   const [fileList, setFileList] = React.useState();
   const [file, setFile] = React.useState();
+  const [fileName, setFileName] = React.useState("");
   const [tokenIconFileList, setTokenIconFileList] = React.useState();
+  const [rawImageUrl, setRawImageUrl] = React.useState("");
   const [imageUrl, setImageUrl] = React.useState("");
   const [showConfirm, setShowConfirm] = React.useState(false);
+  const [showCropModal, setShowCropModal] = React.useState(false);
+  const [roundSelection, setRoundSelection] = React.useState(true);
+
+  const [crop, setCrop] = React.useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = React.useState(0);
+  const [zoom, setZoom] = React.useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = React.useState(null);
+
+  const onCropComplete = React.useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const showCroppedImage = React.useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const croppedResult = await getCroppedImg(rawImageUrl, croppedAreaPixels, rotation, fileName);
+
+      if (roundSelection) {
+        const roundResult = await getRoundImg(croppedResult.url, fileName);
+
+        await getResizedImage(
+          roundResult.url,
+          resizedResult => {
+            setData(prev => ({ ...prev, tokenIcon: resizedResult.file }));
+            setImageUrl(resizedResult.url);
+          },
+          fileName
+        );
+      } else {
+        setData(prev => ({ ...prev, tokenIcon: croppedResult.file }));
+        setImageUrl(croppedResult.url);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [croppedAreaPixels, rotation]);
+
+  const onClose = React.useCallback(() => {
+    setShowCropModal(false);
+  }, []);
 
   const history = useHistory();
 
@@ -178,6 +237,8 @@ const Create = () => {
         const height = 128;
         reader.readAsDataURL(imgFile);
 
+        reader.addEventListener("load", () => setRawImageUrl(reader.result));
+
         reader.onload = event => {
           const img = new Image();
           img.src = event.target.result;
@@ -210,6 +271,7 @@ const Create = () => {
                 const file = new File([blob], imgFile.name, {
                   type: "image/png"
                 });
+                setFileName(imgFile.name);
                 const resultReader = new FileReader();
 
                 resultReader.readAsDataURL(file);
@@ -661,14 +723,86 @@ const Create = () => {
                               <Paragraph
                                 small
                                 ellipsis
-                                style={{ lineHeight: "normal", textAlign: "center" }}
+                                style={{
+                                  lineHeight: "normal",
+                                  textAlign: "center",
+                                  cursor: "pointer"
+                                }}
+                                onClick={() => setShowCropModal(true)}
                               >
                                 <Icon type="paper-clip" />
                                 {data.tokenIcon.name}
                               </Paragraph>
+                              <Paragraph
+                                small
+                                ellipsis
+                                style={{
+                                  lineHeight: "normal",
+                                  textAlign: "center",
+                                  marginBottom: "10px"
+                                }}
+                              >
+                                Click on the file name to crop the image
+                              </Paragraph>
                             </Tooltip>{" "}
                           </>
                         )}
+
+                        <EnhancedModal
+                          style={{ marginTop: "8px", textAlign: "left" }}
+                          expand={showCropModal}
+                          onClick={() => null}
+                          renderExpanded={() => (
+                            <>
+                              {" "}
+                              <Cropper
+                                showGrid={false}
+                                zoomWithScroll={false}
+                                image={rawImageUrl}
+                                crop={crop}
+                                zoom={zoom}
+                                rotation={rotation}
+                                cropShape={roundSelection ? "round" : "rect"}
+                                aspect={1 / 1}
+                                onCropChange={setCrop}
+                                onCropComplete={onCropComplete}
+                                onZoomChange={setZoom}
+                                onRotationChange={setRotation}
+                                style={{ top: "80px" }}
+                              />
+                              <StyledSwitch>
+                                <Switch
+                                  style={{ color: "#F34745" }}
+                                  name="cropShape"
+                                  onChange={checked => setRoundSelection(!checked)}
+                                />{" "}
+                                {roundSelection
+                                  ? "Change to Square Crop Shape"
+                                  : "Change to Round Crop Shap"}
+                              </StyledSwitch>
+                              {"Zoom:"}
+                              <Slider
+                                defaultValue={1}
+                                onChange={zoom => setZoom(zoom)}
+                                min={1}
+                                max={10}
+                                step={0.1}
+                              />
+                              {"Rotation:"}
+                              <Slider
+                                defaultValue={0}
+                                onChange={rotation => setRotation(rotation)}
+                                min={0}
+                                max={360}
+                                step={1}
+                              />
+                              <Button onClick={() => showCroppedImage() && onClose()}>
+                                Save changes
+                              </Button>
+                            </>
+                          )}
+                          onClose={onClose}
+                        />
                         {/* Upload token icon
                         <Input
                           type="file"
@@ -765,7 +899,11 @@ const Create = () => {
                                       <Paragraph
                                         small
                                         ellipsis
-                                        style={{ lineHeight: "normal", textAlign: "center" }}
+                                        style={{
+                                          lineHeight: "normal",
+                                          textAlign: "center",
+                                          cursor: "pointer"
+                                        }}
                                       >
                                         <Icon type="paper-clip" />
                                         {file.name}
