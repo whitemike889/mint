@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import RawQRCode from "qrcode.react";
-import slpLogo from "../../assets/slp-logo.png";
+import slpLogo from "../../assets/slp-logo-2.png";
 import bchLogo from "../../assets/bch-icon-qrcode.png";
-import { QRCode as BrandesQRCode } from "react-qrcode-logo";
 import { CopyToClipboard } from "react-copy-to-clipboard";
 import { Input, Button } from "antd";
 
 export const StyledRawQRCode = styled(RawQRCode)`
   cursor: pointer;
+  border-radius: 8px;
 `;
 
 const AddrHolder = styled.textarea`
@@ -94,7 +94,7 @@ export const QRCode = ({ address, size = 210, onClick = () => null, ...otherProp
           value="Copied"
         />
 
-        <BrandesQRCode
+        {/*<BrandesQRCode
           style={{ position: "absolute" }}
           id="borderedQRCode"
           logoWidth={address.includes("bitcoin") ? size * 1.175 : size * 1}
@@ -108,6 +108,21 @@ export const QRCode = ({ address, size = 210, onClick = () => null, ...otherProp
           bgColor="#fff"
           logoImage={address && address.includes("bitcoin") ? bchLogo : slpLogo}
           {...otherProps}
+        />*/}
+        <StyledRawQRCode
+          id="borderedQRCode"
+          value={address || ""}
+          size={size}
+          renderAs={"svg"}
+          includeMargin
+          imageSettings={{
+            src: address && address.includes("bitcoin") ? bchLogo : slpLogo,
+            x: null,
+            y: null,
+            height: 67,
+            width: 67,
+            excavate: false
+          }}
         />
 
         <StyledInput>

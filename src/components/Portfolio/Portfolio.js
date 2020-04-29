@@ -30,7 +30,7 @@ import getTokenTransactionHistory from "../../utils/getTokenTransactionHistory";
 import bchFlagLogo from "../../assets/4-bitcoin-cash-logo-flag.png";
 
 export const SLP_TOKEN_ICONS_URL = "https://tokens.bch.sx/64";
-export const BITCOIN_DOT_COM_ICONS_URL = "https://icons.btctest.net/64";
+export const BITCOIN_DOT_COM_ICONS_URL = "http://slpicons.stage.cloud.bitcoin.com/64";
 
 export const StyledCollapse = styled(Collapse)`
   background: #fbfcfd !important;
