@@ -173,7 +173,7 @@ const Create = () => {
     } finally {
       setLoading(false);
     }
-  }, [croppedAreaPixels, rotation]);
+  }, [croppedAreaPixels, fileName, rawImageUrl, rotation, roundSelection]);
 
   const onClose = React.useCallback(() => {
     setShowCropModal(false);
@@ -244,6 +244,7 @@ const Create = () => {
           img.src = event.target.result;
           img.onload = () => {
             const elem = document.createElement("canvas");
+            console.log(`Canvas created`);
             elem.width = width;
             elem.height = height;
             const ctx = elem.getContext("2d");
@@ -268,14 +269,21 @@ const Create = () => {
 
             ctx.canvas.toBlob(
               blob => {
-                const file = new File([blob], imgFile.name, {
+                console.log(imgFile.name);
+
+                let fileNameParts = imgFile.name.split(".");
+                fileNameParts.pop();
+                let fileNamePng = fileNameParts.join(".") + ".png";
+                console.log(fileNamePng);
+                const file = new File([blob], fileNamePng, {
                   type: "image/png"
                 });
                 setFileName(imgFile.name);
                 const resultReader = new FileReader();
 
                 resultReader.readAsDataURL(file);
-                setData(prev => ({ ...prev, tokenIcon: file }));
+                setData(prev => ({ ...prev, tokenIcon: file }), console.log(file));
+                console.log(`Passed settokenicon line`);
                 resultReader.addEventListener("load", () => callback(resultReader.result));
                 setLoading(false);
                 resolve();
@@ -286,6 +294,8 @@ const Create = () => {
           };
         };
       } catch (err) {
+        console.log(`Error in handleTokenIconImage()`);
+        console.log(err);
         reject(err);
       }
     });
@@ -424,6 +434,7 @@ const Create = () => {
         formData.append("tokenId", link.substr(link.length - 64));
         const apiUrl = "https://mint-icons.btctest.net/new";
         //const apiUrl = "http://localhost:3002/new";
+
         try {
           const apiTest = await fetch(apiUrl, {
             method: "POST",
@@ -721,7 +732,6 @@ const Create = () => {
                           <>
                             <Tooltip title={data.tokenIcon.name}>
                               <Paragraph
-                                small
                                 ellipsis
                                 style={{
                                   lineHeight: "normal",
@@ -734,7 +744,6 @@ const Create = () => {
                                 {data.tokenIcon.name}
                               </Paragraph>
                               <Paragraph
-                                small
                                 ellipsis
                                 style={{
                                   lineHeight: "normal",
