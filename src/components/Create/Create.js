@@ -274,11 +274,11 @@ const Create = () => {
                 let fileNameParts = imgFile.name.split(".");
                 fileNameParts.pop();
                 let fileNamePng = fileNameParts.join(".") + ".png";
-                console.log(fileNamePng);
+
                 const file = new File([blob], fileNamePng, {
                   type: "image/png"
                 });
-                setFileName(imgFile.name);
+                setFileName(fileNamePng);
                 const resultReader = new FileReader();
 
                 resultReader.readAsDataURL(file);
