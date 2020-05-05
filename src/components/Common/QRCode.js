@@ -119,8 +119,8 @@ export const QRCode = ({ address, size = 210, onClick = () => null, ...otherProp
             src: address && address.includes("bitcoin") ? bchLogo : slpLogo,
             x: null,
             y: null,
-            height: 67,
-            width: 67,
+            height: 42,
+            width: 42,
             excavate: false
           }}
         />
