@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { useSwipeable } from "react-swipeable";
 import { Layout, Menu, Radio, Tabs, Icon } from "antd";
 import Portfolio from "./Portfolio/Portfolio";
+import Icons from "./Icons/Icons";
 import Create from "./Create/Create";
 import Dividends from "./Dividends/Dividends";
 import Configure from "./Configure/Configure";
@@ -215,6 +216,9 @@ const App = () => {
                     <Link to="/create">Create</Link>
                   </Menu.Item>
                 )}
+                <Menu.Item key="icons">
+                  <Link to="/icons">Icons</Link>
+                </Menu.Item>
                 {wallet && (
                   <Menu.SubMenu key="dividends" title={<span>Dividends</span>}>
                     <Menu.Item key="pay-dividends">
@@ -350,6 +354,9 @@ const App = () => {
                 </Route>
                 <Route path="/create">
                   <Create />
+                </Route>
+                <Route path="/icons">
+                  <Icons />
                 </Route>
                 <Route path="/configure">
                   <Configure />

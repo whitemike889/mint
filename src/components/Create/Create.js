@@ -47,6 +47,9 @@ const StyledCard = styled.div`
       padding: 8px;
     }
   }
+  .ant-upload-list-item-info {
+    display: none;
+  }
   .ant-checkbox-inner {
     border: 1px solid #20242d !important;
   }
@@ -125,6 +128,7 @@ const Create = () => {
     decimals: "",
     documentUri: "",
     amount: "",
+    email: "",
     fixedSupply: false
   });
   const [hash, setHash] = React.useState("");
@@ -244,7 +248,7 @@ const Create = () => {
           img.src = event.target.result;
           img.onload = () => {
             const elem = document.createElement("canvas");
-            console.log(`Canvas created`);
+            //console.log(`Canvas created`);
             elem.width = width;
             elem.height = height;
             const ctx = elem.getContext("2d");
@@ -283,9 +287,9 @@ const Create = () => {
 
                 resultReader.readAsDataURL(file);
                 setData(prev => ({ ...prev, tokenIcon: file }), console.log(file));
-                console.log(`Passed settokenicon line`);
                 resultReader.addEventListener("load", () => callback(resultReader.result));
                 setLoading(false);
+                setShowCropModal(true);
                 resolve();
               },
               "image/png",
@@ -414,7 +418,7 @@ const Create = () => {
     const { tokenName, tokenSymbol, documentUri, amount, decimals, fixedSupply } = data;
 
     try {
-      const docUri = documentUri || "developer.bitcoin.com";
+      const docUri = documentUri || "mint.bitcoin.com";
       const link = await createToken(wallet, {
         name: tokenName,
         symbol: tokenSymbol,
@@ -748,10 +752,12 @@ const Create = () => {
                                 style={{
                                   lineHeight: "normal",
                                   textAlign: "center",
-                                  marginBottom: "10px"
+                                  marginBottom: "10px",
+                                  cursor: "pointer"
                                 }}
+                                onClick={() => setShowCropModal(true)}
                               >
-                                Click on the file name to crop the image
+                                Click here to crop or zoom your icon
                               </Paragraph>
                             </Tooltip>{" "}
                           </>
@@ -821,18 +827,37 @@ const Create = () => {
                         /> */}
                       </Form.Item>
 
+                      <Form.Item
+                        labelAlign="left"
+                        labelCol={{ span: 3, offset: 0 }}
+                        colon={false}
+                        validateStatus={
+                          !data.dirty &&
+                          data.email &&
+                          !/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+                            String(data.email).toLowerCase()
+                          )
+                            ? "error"
+                            : ""
+                        }
+                        help={
+                          !data.dirty &&
+                          data.email &&
+                          !/^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(
+                            String(data.email).toLowerCase()
+                          )
+                            ? "Must be a valid email address (or no email at all)"
+                            : ""
+                        }
+                      >
+                        <Input
+                          placeholder="your email address (optional)"
+                          name="email"
+                          onChange={e => handleChange(e)}
+                        />
+                      </Form.Item>
                       <Paragraph>
-                        You can also follow{" "}
-                        <strong>
-                          <a
-                            href="https://github.com/kosinusbch/slp-token-icons#adding-your-icon"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            these instructions
-                          </a>
-                        </strong>{" "}
-                        after creating your token.
+                        You can add an icon after your token is created at the Icons page
                       </Paragraph>
                     </Collapse.Panel>
                   </Collapse>
