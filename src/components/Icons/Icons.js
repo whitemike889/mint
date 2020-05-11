@@ -172,6 +172,7 @@ const Icons = () => {
                 setData(prev => ({ ...prev, tokenIcon: file }), console.log(file));
                 resultReader.addEventListener("load", () => callback(resultReader.result));
                 setLoading(false);
+                setShowCropModal(true);
                 resolve();
               },
               "image/png",
