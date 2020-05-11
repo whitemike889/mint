@@ -172,7 +172,7 @@ const Icons = () => {
                 setData(prev => ({ ...prev, tokenIcon: file }), console.log(file));
                 resultReader.addEventListener("load", () => callback(resultReader.result));
                 setLoading(false);
-                setShowCropModal(true);
+                //setShowCropModal(true);
                 resolve();
               },
               "image/png",
@@ -236,7 +236,7 @@ const Icons = () => {
     );
 
   async function handleSubmitIcon() {
-    console.log(`handleSubmitIcon()`);
+    //console.log(`handleSubmitIcon()`);
     setData({
       ...data,
       dirty: false
