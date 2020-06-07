@@ -236,6 +236,12 @@ const App = () => {
                   <Link to="/audit">Audit</Link>
                 </Menu.Item>
                 <Menu.SubMenu key="links" title={<span>Links</span>}>
+                  <Menu.Item key="link-trade-locally">
+                    {" "}
+                    <a href="https://send.bitcoin.com" target="_blank" rel="noopener noreferrer">
+                      Send BCH by Email
+                    </a>
+                  </Menu.Item>
                   <Menu.Item key="link-faucet">
                     <a href="https://free.bitcoin.com/" target="_blank" rel="noopener noreferrer">
                       Faucet (Free BCH)
