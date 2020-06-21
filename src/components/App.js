@@ -10,6 +10,7 @@ import Create from "./Create/Create";
 import Dividends from "./Dividends/Dividends";
 import Configure from "./Configure/Configure";
 import Audit from "./Audit/Audit";
+import SatoshiDice from "./SatoshiDice/SatoshiDice";
 import NotFound from "./NotFound";
 import "./App.css";
 import { WalletContext } from "../utils/context";
@@ -235,6 +236,9 @@ const App = () => {
                 <Menu.Item key="audit">
                   <Link to="/audit">Audit</Link>
                 </Menu.Item>
+                <Menu.Item key="satoshi-dice">
+                  <Link to="/satoshi-dice">Satoshi Dice</Link>
+                </Menu.Item>
                 <Menu.SubMenu key="links" title={<span>Links</span>}>
                   <Menu.Item key="link-trade-locally">
                     {" "}
@@ -369,6 +373,9 @@ const App = () => {
                 </Route>
                 <Route path="/audit">
                   <Audit />
+                </Route>
+                <Route path="/satoshi-dice">
+                  <SatoshiDice />
                 </Route>
                 <Route path="/pay-dividends">
                   <Dividends />
