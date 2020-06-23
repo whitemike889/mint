@@ -63,7 +63,7 @@ export default () => {
                 </>
               }
             />
-            {multiplier && <SendBCH filledAddress={multiplier.address} />}
+            {multiplier && <SendBCH filledAddress={multiplier.address} onClose={() => null} />}
 
             <br />
             <Alert
