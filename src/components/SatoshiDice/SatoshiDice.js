@@ -4,6 +4,7 @@ import styled from "styled-components";
 import StyledSatoshiDice from "../Common/StyledPage";
 import SendBCH from "../Portfolio/SendBCH/SendBCH";
 import satoshiDice from "../../utils/satoshiDice";
+import { WalletContext } from "../../utils/context";
 
 const { Option } = Select;
 const { Text, Title, Paragraph } = Typography;
@@ -15,6 +16,7 @@ const StyledSelect = styled(Select)`
 
 export default () => {
   const [multiplier, setMultiplier] = useState(satoshiDice[`1.1x`]);
+  const { balances } = React.useContext(WalletContext);
 
   return (
     <StyledSatoshiDice>
@@ -70,6 +72,9 @@ export default () => {
               style={{ marginBottom: "10px" }}
               message={
                 <span>
+                  <Paragraph>
+                    Current balance: <strong>{balances.totalBalance} BCH</strong>
+                  </Paragraph>
                   <Paragraph>
                     <strong>
                       If you win the bet, you will receive the payout in a few seconds.
