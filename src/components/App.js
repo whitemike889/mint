@@ -85,6 +85,7 @@ const App = () => {
   const [mobile, setMobile] = React.useState(false);
   const [address, setAddress] = React.useState("slpAddress");
   const [pixelRatio, setPixelRatio] = React.useState(1);
+  const [isCountryBanned, setIsCountryBanned] = React.useState(false);
 
   const ContextValue = React.useContext(WalletContext);
   const { wallet } = ContextValue;
@@ -114,6 +115,30 @@ const App = () => {
 
   const handleClickTrigger = e => (document.body.style.overflow = "hidden");
 
+  const checkIsCountryBanned = async () => {
+    const bannedCountries = ["United States"];
+    let isBanned = false;
+    try {
+      const result = await fetch(
+        `https://cors-anywhere.herokuapp.com/https://api.ipify.org/?format=json`
+      );
+      const { ip } = await result.json();
+
+      console.log(`IP Fetching from ipify`, ip);
+      const ipData = await fetch(
+        `https://cors-anywhere.herokuapp.com/http://api.ipstack.com/${ip}?access_key=${process.env.REACT_APP_IPSTACK_KEY}`
+      );
+      const { country_name } = await ipData.json();
+      console.log(`Country name: `, country_name);
+      if (bannedCountries.includes(country_name)) {
+        setIsCountryBanned(true);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return isBanned;
+  };
+
   React.useEffect(() => {
     if (mobile && pixelRatio === 1) {
       const triggerElement = document.getElementsByTagName("aside")[0].children[1];
@@ -129,6 +154,7 @@ const App = () => {
   React.useEffect(() => {
     handleResize();
     window.addEventListener("resize", handleResize);
+    checkIsCountryBanned(setIsCountryBanned);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -236,9 +262,12 @@ const App = () => {
                 <Menu.Item key="audit">
                   <Link to="/audit">Audit</Link>
                 </Menu.Item>
-                <Menu.Item key="satoshi-dice">
-                  <Link to="/satoshi-dice">Satoshi Dice</Link>
-                </Menu.Item>
+                {console.log(isCountryBanned)}
+                {!isCountryBanned && (
+                  <Menu.Item key="satoshi-dice">
+                    <Link to="/satoshi-dice">Satoshi Dice</Link>
+                  </Menu.Item>
+                )}
                 <Menu.SubMenu key="links" title={<span>Links</span>}>
                   <Menu.Item key="link-trade-locally">
                     {" "}
@@ -374,9 +403,11 @@ const App = () => {
                 <Route path="/audit">
                   <Audit />
                 </Route>
-                <Route path="/satoshi-dice">
-                  <SatoshiDice />
-                </Route>
+                {!isCountryBanned && (
+                  <Route path="/satoshi-dice">
+                    <SatoshiDice />
+                  </Route>
+                )}
                 <Route path="/pay-dividends">
                   <Dividends />
                 </Route>
