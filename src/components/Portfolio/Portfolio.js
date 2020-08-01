@@ -236,7 +236,9 @@ export default () => {
               setOuterAction(!outerAction);
             }}
             renderExpanded={() =>
-              action === "sendBCH" && <SendBCH onClose={onClose} outerAction={outerAction} />
+              action === "sendBCH" && (
+                <SendBCH showCardHeader onClose={onClose} outerAction={outerAction} />
+              )
             }
             onClose={onClose}
           >
