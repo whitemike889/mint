@@ -10,6 +10,10 @@ const StyledPage = styled.div`
       box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.1);
     }
 
+    a {
+      color: rgb(93, 170, 126);
+    }
+
     * {
       color: rgb(62, 63, 66);
     }
