@@ -63,6 +63,8 @@ const Transfer = ({ token, onClose }) => {
         message = "Not enough BCH. Deposit some funds to use this feature.";
       } else if (/Token Receiver Address must be simpleledger format/.test(e.message)) {
         message = "Token Receiver Address must be simpleledger format.";
+      } else if (/Invalid BCH address. Double check your address is valid/.test(e.message)) {
+        message = "Invalid SLP address. Double check your address is valid.";
       } else if (!e.error) {
         message = `Transaction failed: no response from ${getRestUrl()}.`;
       } else if (/Could not communicate with full node or other external service/.test(e.error)) {
