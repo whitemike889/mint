@@ -1,5 +1,11 @@
 # Changelog - Bitcoin.com Mint
 
+## Oct 1, 2020
+
+- Correct error handling for user attempt to send SLP to BCH address
+- Correct error handling for user attempt to send SLP to invalid address
+- Introduce semantic versioning at 0.1.1
+
 ## Apr 29, 2020
 
 - Add icons with token creation
