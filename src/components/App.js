@@ -263,7 +263,7 @@ const App = () => {
                   <Link to="/audit">Audit</Link>
                 </Menu.Item>
                 {console.log(isCountryBanned)}
-                {!isCountryBanned && (
+                {!isCountryBanned && wallet && (
                   <Menu.Item key="satoshi-dice">
                     <Link to="/satoshi-dice">Satoshi Dice</Link>
                   </Menu.Item>

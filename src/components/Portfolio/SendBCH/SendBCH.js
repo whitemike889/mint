@@ -18,7 +18,7 @@ export const StyledButtonWrapper = styled.div`
   justify-content: center;
 `;
 
-const SendBCH = ({ onClose, outerAction, filledAddress, showCardHeader }) => {
+const SendBCH = ({ onClose, outerAction, filledAddress, showCardHeader, callbackTxId }) => {
   const { wallet, balances, slpBalancesAndUtxos, tokens } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: true,
@@ -49,7 +49,7 @@ const SendBCH = ({ onClose, outerAction, filledAddress, showCardHeader }) => {
       const link = await sendBch(wallet, slpBalancesAndUtxos.nonSlpUtxos, {
         addresses: [filledAddress || address],
         values: [value]
-      });
+      }, callbackTxId);
 
       notification.success({
         message: "Success",
