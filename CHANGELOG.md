@@ -1,5 +1,10 @@
 # Changelog - Bitcoin.com Mint
 
+## Oct 5, 2020
+
+- Add new feature: Satoshi Dice
+- Add Country Ban for select features
+
 ## Oct 1, 2020
 
 - Correct error handling for user attempt to send SLP to BCH address
