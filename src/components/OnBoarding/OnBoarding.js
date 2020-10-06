@@ -106,73 +106,7 @@ export const OnBoarding = ({ history }) => {
                   )}
                 </Collapse.Panel>
 
-                <Collapse.Panel
-                  header={
-                    <>
-                      <Img
-                        style={{ marginBottom: "3px" }}
-                        src={badgerWalletLogo}
-                        width="16"
-                        height="16"
-                      />{" "}
-                      Badger Mobile wallet
-                    </>
-                  }
-                  key="2"
-                  style={{ textAlign: "left" }}
-                >
-                  {openKey === "2" && warningRead ? (
-                    <Form.Item
-                      validateStatus={!formData.dirty && !formData.mnemonic ? "error" : ""}
-                      help={!formData.dirty && !formData.mnemonic ? "Should not be empty" : ""}
-                    >
-                      <Input
-                        prefix={<Icon type="lock" />}
-                        placeholder="mnemonic (seed phrase)"
-                        name="mnemonic"
-                        onChange={e => handleChange(e)}
-                        required
-                      />
-                    </Form.Item>
-                  ) : (
-                    openKey === "2" &&
-                    !warningRead && (
-                      <div style={{ textAlign: "center" }}>
-                        <h3 style={{ marginBottom: 3 }}>
-                          <Icon type="warning" />
-                        </h3>
-                        <strong>Be careful typing your seed into a browser!</strong>
-                        <br />
-                        <Button style={{ marginTop: "12px" }} onClick={() => handleWarning()}>
-                          Got it
-                        </Button>
-                      </div>
-                    )
-                  )}
-                </Collapse.Panel>
-
-                <Collapse.Panel
-                  header={
-                    <>
-                      <Img
-                        style={{ marginBottom: "3px" }}
-                        src={bitcoinWalletLogo}
-                        width="13"
-                        height="18"
-                      />{" "}
-                      Bitcoin.com wallet
-                    </>
-                  }
-                  style={{ textAlign: "left" }}
-                  key="3"
-                >
-                  <div style={{ textAlign: "center" }}>
-                    <h3 style={{ marginBottom: 0 }}>
-                      <Icon type="clock-circle" />
-                    </h3>
-                    <strong>Coming Soon</strong>
-                  </div>
-                </Collapse.Panel>
+             
               </Collapse>
 
               <div style={{ paddingTop: "12px" }}>
