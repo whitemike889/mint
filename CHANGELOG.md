@@ -1,5 +1,17 @@
 # Changelog - Bitcoin.com Mint
 
+## Oct 5, 2020
+
+- Add new feature: Satoshi Dice
+- Add Country Ban for select features
+- Remove Badger and Bitcoin.com wallet imports
+
+## Oct 1, 2020
+
+- Correct error handling for user attempt to send SLP to BCH address
+- Correct error handling for user attempt to send SLP to invalid address
+- Introduce semantic versioning at 0.1.1
+
 ## Apr 29, 2020
 
 - Add icons with token creation

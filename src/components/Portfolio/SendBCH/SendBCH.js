@@ -18,12 +18,12 @@ export const StyledButtonWrapper = styled.div`
   justify-content: center;
 `;
 
-const SendBCH = ({ onClose, outerAction }) => {
+const SendBCH = ({ onClose, outerAction, filledAddress, showCardHeader, callbackTxId }) => {
   const { wallet, balances, slpBalancesAndUtxos, tokens } = React.useContext(WalletContext);
   const [formData, setFormData] = useState({
     dirty: true,
     value: "",
-    address: ""
+    address: filledAddress || ""
   });
   const [loading, setLoading] = useState(false);
   const [action, setAction] = useState("send");
@@ -47,9 +47,9 @@ const SendBCH = ({ onClose, outerAction }) => {
 
     try {
       const link = await sendBch(wallet, slpBalancesAndUtxos.nonSlpUtxos, {
-        addresses: [address],
+        addresses: [filledAddress || address],
         values: [value]
-      });
+      }, callbackTxId);
 
       notification.success({
         message: "Success",
@@ -153,39 +153,41 @@ const SendBCH = ({ onClose, outerAction }) => {
         <Spin spinning={loading}>
           <Card
             title={
-              <Radio.Group
-                defaultValue="send"
-                onChange={() => handleChangeAction()}
-                value={action}
-                style={{ width: "100%", textAlign: "center", marginTop: 0, marginBottom: 0 }}
-                size="small"
-                buttonStyle="solid"
-              >
-                <Radio.Button
-                  style={{
-                    borderRadius: "19.5px",
-                    height: "40px",
-                    width: "50%",
-                    fontSize: "16px"
-                  }}
-                  value="send"
-                  onClick={() => handleChangeAction()}
+              showCardHeader && (
+                <Radio.Group
+                  defaultValue="send"
+                  onChange={() => handleChangeAction()}
+                  value={action}
+                  style={{ width: "100%", textAlign: "center", marginTop: 0, marginBottom: 0 }}
+                  size="small"
+                  buttonStyle="solid"
                 >
-                  <PlaneIcon style={{ color: "#fff" }} /> Send
-                </Radio.Button>
-                <Radio.Button
-                  style={{
-                    borderRadius: "19.5px",
-                    height: "40px",
-                    width: "50%",
-                    fontSize: "16px"
-                  }}
-                  value="history"
-                  onClick={() => handleChangeAction()}
-                >
-                  <Icon style={{ color: "#fff" }} type="history" /> History
-                </Radio.Button>
-              </Radio.Group>
+                  <Radio.Button
+                    style={{
+                      borderRadius: "19.5px",
+                      height: "40px",
+                      width: "50%",
+                      fontSize: "16px"
+                    }}
+                    value="send"
+                    onClick={() => handleChangeAction()}
+                  >
+                    <PlaneIcon style={{ color: "#fff" }} /> Send
+                  </Radio.Button>
+                  <Radio.Button
+                    style={{
+                      borderRadius: "19.5px",
+                      height: "40px",
+                      width: "50%",
+                      fontSize: "16px"
+                    }}
+                    value="history"
+                    onClick={() => handleChangeAction()}
+                  >
+                    <Icon style={{ color: "#fff" }} type="history" /> History
+                  </Radio.Button>
+                </Radio.Group>
+              )
             }
             bordered={false}
           >
@@ -212,6 +214,7 @@ const SendBCH = ({ onClose, outerAction }) => {
                   <Col span={24}>
                     <Form style={{ width: "auto" }}>
                       <FormItemWithQRCodeAddon
+                        disabled={Boolean(filledAddress)}
                         validateStatus={!formData.dirty && !formData.address ? "error" : ""}
                         help={
                           !formData.dirty && !formData.address
@@ -220,11 +223,12 @@ const SendBCH = ({ onClose, outerAction }) => {
                         }
                         onScan={result => setFormData({ ...formData, address: result })}
                         inputProps={{
+                          disabled: Boolean(filledAddress),
                           placeholder: "BCH Address",
                           name: "address",
                           onChange: e => handleChange(e),
                           required: true,
-                          value: formData.address
+                          value: filledAddress || formData.address
                         }}
                       />
                       <FormItemWithMaxAddon

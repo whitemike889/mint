@@ -13,7 +13,7 @@ export const SEND_BCH_ERRORS = {
 const NETWORK = process.env.REACT_APP_NETWORK;
 
 export const sendBch = withSLP(
-  async (SLP, wallet, utxos, { addresses, values, encodedOpReturn }) => {
+  async (SLP, wallet, utxos, { addresses, values, encodedOpReturn }, callbackTxId ) => {
     try {
       if (!values.length) {
         return null;
@@ -113,6 +113,10 @@ export const sendBch = withSLP(
       // Broadcast transation to the network
       const txidStr = await SLP.RawTransactions.sendRawTransaction([hex]);
       let link;
+     
+      if (callbackTxId) {
+        callbackTxId(txidStr)
+      }
       if (NETWORK === `mainnet`) {
         link = `https://explorer.bitcoin.com/bch/tx/${txidStr}`;
       } else {
