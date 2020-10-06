@@ -4,6 +4,7 @@
 
 - Add new feature: Satoshi Dice
 - Add Country Ban for select features
+- Remove Badger and Bitcoin.com wallet imports
 
 ## Oct 1, 2020
 
