@@ -261,7 +261,6 @@ const App = () => {
                 <Menu.Item key="audit">
                   <Link to="/audit">Audit</Link>
                 </Menu.Item>
-                {console.log(isCountryBanned)}
                 {!isCountryBanned && wallet && (
                   <Menu.Item key="satoshi-dice">
                     <Link to="/satoshi-dice">Satoshi Dice</Link>
