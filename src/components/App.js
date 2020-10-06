@@ -129,8 +129,7 @@ const App = () => {
         `https://cors-anywhere.herokuapp.com/http://api.ipstack.com/${ip}?access_key=${process.env.REACT_APP_IPSTACK_KEY}`
       );
       const { country_name } = await ipData.json();
-      console.log(`Country name: `, country_name);
-      if (bannedCountries.includes(country_name)) {
+      if (bannedCountries.includes(country_name) || typeof country_name == 'undefined') {
         setIsCountryBanned(true);
       }
     } catch (e) {
