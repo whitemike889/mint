@@ -40,7 +40,7 @@ export default () => {
     dirty: true,
     restAPI: window.localStorage.getItem("restAPI")
   });
-  const defaultRestUrl = "https://rest.bitcoin.com/v2/";
+  const defaultRestUrl = "https://rest.bch.actorforth.org/v2";
 
   const newRestApiUrl = (protocol, restAPI) => protocol.concat(restAPI);
   const handleChangeProcotol = protocol => setProtocol(protocol);
