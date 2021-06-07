@@ -93,7 +93,6 @@ const App = () => {
   const location = useLocation();
   const history = useHistory();
   const selectedKey = location && location.pathname ? location.pathname.substr(1) : "";
-
   const handleChange = e => {
     window.scrollTo(0, 0);
     setTimeout(() => {
@@ -129,7 +128,7 @@ const App = () => {
         `https://cors-anywhere.herokuapp.com/http://api.ipstack.com/${ip}?access_key=${process.env.REACT_APP_IPSTACK_KEY}`
       );
       const { country_name } = await ipData.json();
-      if (bannedCountries.includes(country_name) || typeof country_name == 'undefined') {
+      if (bannedCountries.includes(country_name) || typeof country_name == "undefined") {
         setIsCountryBanned(true);
       }
     } catch (e) {
@@ -234,38 +233,6 @@ const App = () => {
               style={{ textAlign: "left" }}
             >
               <Menu.ItemGroup style={{ marginTop: "0px" }} key="menu" title="MENU">
-                <Menu.Item key="portfolio">
-                  <Link to="/portfolio">Portfolio</Link>
-                </Menu.Item>
-                {wallet && (
-                  <Menu.Item key="create">
-                    <Link to="/create">Create</Link>
-                  </Menu.Item>
-                )}
-                <Menu.Item key="icons">
-                  <Link to="/icons">Icons</Link>
-                </Menu.Item>
-                {wallet && (
-                  <Menu.SubMenu key="dividends" title={<span>Dividends</span>}>
-                    <Menu.Item key="pay-dividends">
-                      <Link to="/pay-dividends">Pay Dividends</Link>
-                    </Menu.Item>
-                    <Menu.Item key="dividends-history">
-                      <Link to="/dividends-history">Dividends History</Link>
-                    </Menu.Item>
-                  </Menu.SubMenu>
-                )}
-                <Menu.Item key="configure">
-                  <Link to="/configure">Configure</Link>
-                </Menu.Item>
-                <Menu.Item key="audit">
-                  <Link to="/audit">Audit</Link>
-                </Menu.Item>
-                {!isCountryBanned && wallet && (
-                  <Menu.Item key="satoshi-dice">
-                    <Link to="/satoshi-dice">Satoshi Dice</Link>
-                  </Menu.Item>
-                )}
                 <Menu.SubMenu key="links" title={<span>Links</span>}>
                   <Menu.Item key="link-trade-locally">
                     {" "}
@@ -386,80 +353,15 @@ const App = () => {
               }}
             >
               <Switch>
-                <Route path="/portfolio">
-                  <Portfolio />
-                </Route>
-                <Route path="/create">
-                  <Create />
-                </Route>
-                <Route path="/icons">
-                  <Icons />
-                </Route>
                 <Route path="/configure">
                   <Configure />
                 </Route>
-                <Route path="/audit">
-                  <Audit />
-                </Route>
-                {!isCountryBanned && (
-                  <Route path="/satoshi-dice">
-                    <SatoshiDice />
-                  </Route>
-                )}
-                <Route path="/pay-dividends">
-                  <Dividends />
-                </Route>
-                <Route path="/dividends-history">
-                  <DividendHistory />
-                </Route>
-                <Redirect exact from="/" to="/portfolio" />
-                <Route component={NotFound} />
+                <Redirect exact from="/" to="/configure" />
+                <Route component={Configure} />
               </Switch>
             </div>
           </Content>
-          {mobile && (
-            <StyledTabsMenu>
-              <Footer>
-                <Tabs
-                  activeKey={selectedKey}
-                  tabBarStyle={{ height: "55px" }}
-                  onChange={key => handleChange({ key })}
-                  tabBarGutter={"16vw"}
-                  tabPosition="bottom"
-                >
-                  <TabPane
-                    tab={
-                      <span onClick={() => history.push("/portfolio")}>
-                        <Icon type="folder-open" theme="filled" />
-                        Portfolio
-                      </span>
-                    }
-                    key="portfolio"
-                  />
-                  <TabPane
-                    tab={
-                      <span onClick={() => history.push("/create")}>
-                        <Icon type="plus-square" theme="filled" />
-                        Create
-                      </span>
-                    }
-                    key="create"
-                    disabled={!wallet}
-                  />
-                  <TabPane
-                    tab={
-                      <span onClick={() => history.push("/pay-dividends")}>
-                        <Icon type="dollar-circle" theme="filled" />
-                        Dividends
-                      </span>
-                    }
-                    key="pay-dividends"
-                    disabled={!wallet}
-                  />
-                </Tabs>
-              </Footer>
-            </StyledTabsMenu>
-          )}
+          {mobile && <StyledTabsMenu></StyledTabsMenu>}
         </Layout>
       </Layout>
     </div>

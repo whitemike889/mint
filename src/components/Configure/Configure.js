@@ -83,7 +83,7 @@ export default () => {
           <Card
             title={
               <h2>
-                <Icon type="tool" theme="filled" /> Configure
+                <Icon type="tool" theme="filled" /> Maintenance
               </h2>
             }
             bordered={true}
@@ -94,10 +94,20 @@ export default () => {
                 message={
                   <span>
                     <Paragraph>
-                      <Icon type="warning" /> Be careful.
+                      <Icon type="warning" /> Announcement
                     </Paragraph>
-                    <Paragraph>Backup your wallet first.</Paragraph>
-                    <Paragraph>Updating the configuration will restart the app.</Paragraph>
+                    <Paragraph>
+                      Mint will soon become Pitico 2.0, a revamped and improved version of the
+                      original project that became Mint.
+                    </Paragraph>
+                    <Paragraph>All features are disabled for now.</Paragraph>
+                    <Paragraph>
+                      If you already have a wallet, backup your seed below. Your funds are safe.
+                    </Paragraph>
+                    <Paragraph>
+                      For further questions and updates, join our telegram group:
+                      https://t.me/piticocash
+                    </Paragraph>
                   </span>
                 }
                 type="warning"
@@ -105,64 +115,6 @@ export default () => {
                 afterClose={handleClose}
               />
             ) : null}
-            <Form>
-              <Form.Item
-                validateStatus={
-                  !data.dirty &&
-                  (option === "custom" && !isValidCustomRest(option, protocol, data.restAPI))
-                    ? "error"
-                    : ""
-                }
-                help={
-                  !data.dirty &&
-                  (option === "custom" && !isValidCustomRest(option, protocol, data.restAPI))
-                    ? "Should be something like https://rest.bitcoin.com/v2"
-                    : ""
-                }
-              >
-                <Select defaultValue={getRestUrl()} onChange={value => setOption(value)}>
-                  <Option value={defaultRestUrl}>{defaultRestUrl}</Option>
-                  {getRestUrl() !== defaultRestUrl && (
-                    <Option value={getRestUrl()}>{getRestUrl()}</Option>
-                  )}
-                  <Option value="custom">
-                    <Icon type="edit" /> Choose custom...
-                  </Option>
-                </Select>
-
-                {option === "custom" && (
-                  <Input
-                    spellCheck="false"
-                    style={{ marginTop: "10px" }}
-                    placeholder={"rest.bitcoin.com/v2/"}
-                    name="restAPI"
-                    onChange={e => handleChange(e)}
-                    required
-                    addonBefore={selectBefore(protocol, handleChangeProcotol)}
-                  />
-                )}
-              </Form.Item>
-              <div style={{ paddingTop: "12px", marginBottom: "10px" }}>
-                <Button
-                  disabled={
-                    !(
-                      option === "custom" ||
-                      (getRestUrl() !== defaultRestUrl && option === defaultRestUrl)
-                    )
-                  }
-                  onClick={() => handleConfigure()}
-                >
-                  Update REST API
-                </Button>
-                {isConfigUpdated && (
-                  <Paragraph>
-                    Your configuration has been updated. Now connecting to{" "}
-                    {option === "custom" ? newRestApiUrl(protocol, data.restAPI) : defaultRestUrl}
-                    ...
-                  </Paragraph>
-                )}
-              </div>
-            </Form>
             {wallet && wallet.mnemonic && (
               <StyledCollapse>
                 <Panel header="Seed Phrase (Mnemonic)" key="1" disabled={!(wallet || {}).mnemonic}>
